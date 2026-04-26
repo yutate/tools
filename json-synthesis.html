@@ -309,7 +309,7 @@ textarea::placeholder { color: var(--dim); }
   <!-- KEY -->
   <div class="dvd"><span>APIキー</span></div>
   <div class="key-row">
-    <input type="password" class="key-input" id="keyInput" placeholder="sk-ant-... / AIza... / sk-...">
+    <input type="password" class="key-input" id="keyInput" placeholder="sk-ant-... / AIza... / sk-..." autocomplete="off" autocorrect="off" spellcheck="false">
     <button class="sm-btn" id="keySave">Save</button>
     <span class="key-status ok" id="keyStatus" style="display:none;">✓ SET</span>
   </div>
@@ -581,10 +581,24 @@ async function run() {
   } catch (err) {
     thinking.classList.remove('on');
     outWrap.classList.add('on');
-    outBody.textContent = 'エラー: ' + err.message;
+    outBody.style.color = '#ff6b35';
+    outBody.textContent = '⚠ ' + err.message;
+    setTimeout(() => { outBody.style.color = ''; }, 100);
   }
 
   runBtn.disabled = false; updateRun();
+}
+
+async function checkStatus(res, label) {
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.clone().text();
+      const j = JSON.parse(body);
+      detail = j.error?.message || j.message || body.slice(0, 200);
+    } catch { detail = await res.clone().text().catch(() => ''); }
+    throw new Error(`${label} HTTP ${res.status}: ${detail}`);
+  }
 }
 
 async function runClaude(msg, model, outBody, outWrap, thinking) {
@@ -604,6 +618,7 @@ async function runClaude(msg, model, outBody, outWrap, thinking) {
       stream: true
     })
   });
+  await checkStatus(res, 'Claude');
   thinking.classList.remove('on'); outWrap.classList.add('on');
   await streamSSE(res, outBody, evt => {
     if (evt.type === 'content_block_delta' && evt.delta?.text) return evt.delta.text;
@@ -622,6 +637,7 @@ async function runGemini(msg, outBody, outWrap, thinking) {
       })
     }
   );
+  await checkStatus(res, 'Gemini');
   thinking.classList.remove('on'); outWrap.classList.add('on');
   await streamSSE(res, outBody, evt => evt.candidates?.[0]?.content?.parts?.[0]?.text);
 }
@@ -635,6 +651,7 @@ async function runGPT(msg, outBody, outWrap, thinking) {
       messages: [{ role: 'system', content: SYSTEM[selectedMode] }, { role: 'user', content: msg }]
     })
   });
+  await checkStatus(res, 'ChatGPT');
   thinking.classList.remove('on'); outWrap.classList.add('on');
   await streamSSE(res, outBody, evt => evt.choices?.[0]?.delta?.content);
 }
