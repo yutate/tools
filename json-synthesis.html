@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Synthesis</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0d0d0d;
+  --surface: #141414;
+  --surface2: #1a1a1a;
+  --border: #252525;
+  --border2: #333;
+  --accent: #e8ff47;
+  --accent2: #ff6b35;
+  --text: #efefef;
+  --muted: #666;
+  --dim: #3a3a3a;
+  --claude-s: #da7756;
+  --claude-h: #f0a875;
+  --gemini: #4285f4;
+  --gpt: #10a37f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,71,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,71,0.022) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 900px; margin: 0 auto;
+  padding: 44px 24px 120px;
+}
+
+/* ── HEADER ── */
+.hdr { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 10px; }
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px; color: var(--accent); letter-spacing: -0.5px; }
+.logo-sub { font-family: 'Syne', sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-left: 10px; }
+.ver { font-size: 10px; letter-spacing: 2px; color: var(--dim); font-family: 'Syne', sans-serif; }
+
+/* ── DIVIDER ── */
+.dvd { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.dvd::before, .dvd::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.dvd span { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); white-space: nowrap; font-family: 'Syne', sans-serif; }
+
+/* ── STEP BADGE ── */
+.step-hdr { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.step-badge {
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 3px; padding: 4px 10px; color: var(--muted);
+}
+.step-badge.active { background: rgba(232,255,71,0.08); border-color: var(--accent); color: var(--accent); }
+.step-title { font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); letter-spacing: 1px; }
+.step-note { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* ── DROP ── */
+.drop-zone {
+  border: 1.5px dashed var(--border); border-radius: 4px;
+  padding: 32px 24px; text-align: center; cursor: pointer;
+  transition: all 0.18s; margin-bottom: 14px;
+}
+.drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(232,255,71,0.03); }
+.drop-icon { font-size: 26px; opacity: 0.35; margin-bottom: 8px; }
+.drop-txt { font-size: 13px; color: var(--muted); }
+.drop-txt strong { color: var(--accent); }
+
+/* ── PASTE ── */
+.paste-row { display: flex; gap: 8px; margin-bottom: 24px; }
+textarea {
+  flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-family: 'SF Mono','Fira Code',monospace; font-size: 12px;
+  padding: 10px 12px; resize: vertical; min-height: 72px; outline: none; transition: border-color 0.18s;
+}
+textarea:focus { border-color: var(--border2); }
+textarea::placeholder { color: var(--dim); }
+.sm-btn {
+  align-self: flex-end; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--muted); cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 10px; letter-spacing: 1.5px; padding: 9px 14px; white-space: nowrap;
+  transition: all 0.18s; text-transform: uppercase;
+}
+.sm-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── CHIPS ── */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 3px; padding: 5px 10px; font-size: 12px;
+  animation: fadeUp 0.2s ease;
+}
+.chip-name { color: var(--text); }
+.chip-size { color: var(--muted); font-size: 10px; }
+.chip-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; transition: color 0.15s; }
+.chip-del:hover { color: var(--accent2); }
+
+/* ── PREVIEW ── */
+.preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 32px; }
+
+.preview-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: 16px 18px; animation: fadeUp 0.25s ease;
+}
+.preview-card-name { font-family: 'Syne', sans-serif; font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 10px; word-break: break-all; }
+.preview-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.preview-key { font-size: 11px; color: var(--muted); }
+.preview-val { font-size: 11px; color: var(--text); font-family: 'SF Mono', monospace; }
+.preview-keys { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.preview-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 2px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--muted); font-family: 'SF Mono', monospace;
+}
+.preview-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ── SECTION SEPARATOR ── */
+.section-sep { height: 1px; background: var(--border); margin: 36px 0; }
+
+/* ── AI SELECTOR ── */
+.ai-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px; }
+
+.ai-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 10px; letter-spacing: 1.5px; padding: 12px 6px;
+  text-transform: uppercase; transition: all 0.18s;
+}
+.ai-dot { width: 8px; height: 8px; border-radius: 50%; }
+.ai-btn[data-ai="claude-sonnet"] .ai-dot { background: var(--claude-s); }
+.ai-btn[data-ai="claude-haiku"]  .ai-dot { background: var(--claude-h); }
+.ai-btn[data-ai="gemini"]        .ai-dot { background: var(--gemini); }
+.ai-btn[data-ai="chatgpt"]       .ai-dot { background: var(--gpt); }
+
+.ai-btn.active { background: var(--surface2); }
+.ai-btn[data-ai="claude-sonnet"].active { border-color: var(--claude-s); color: var(--claude-s); }
+.ai-btn[data-ai="claude-haiku"].active  { border-color: var(--claude-h); color: var(--claude-h); }
+.ai-btn[data-ai="gemini"].active        { border-color: var(--gemini);   color: var(--gemini); }
+.ai-btn[data-ai="chatgpt"].active       { border-color: var(--gpt);      color: var(--gpt); }
+
+.ai-label { font-size: 10px; letter-spacing: 1.5px; }
+.ai-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; margin-top: -3px; }
+.ai-btn.active .ai-sub { opacity: 0.7; }
+
+/* ── KEY ROW ── */
+.key-row { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
+.key-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-family: 'SF Mono','Fira Code',monospace; font-size: 12px;
+  padding: 9px 12px; outline: none; transition: border-color 0.18s;
+}
+.key-input:focus { border-color: var(--border2); }
+.key-input::placeholder { color: var(--dim); }
+.key-status { font-size: 10px; letter-spacing: 1px; padding: 4px 9px; border-radius: 3px; white-space: nowrap; }
+.key-status.ok { background: rgba(232,255,71,0.08); color: var(--accent); border: 1px solid rgba(232,255,71,0.2); }
+
+/* ── MODES ── */
+.modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px; }
+.mode-btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); cursor: pointer; padding: 13px 6px; text-align: center; transition: all 0.18s;
+}
+.mode-btn:hover { border-color: var(--border2); color: var(--text); }
+.mode-btn.active { border-color: var(--accent); background: rgba(232,255,71,0.05); color: var(--accent); }
+.mode-icon { font-size: 18px; display: block; margin-bottom: 5px; }
+.mode-name { display: block; font-family: 'Syne', sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.mode-desc { display: block; font-size: 10px; color: var(--dim); margin-top: 3px; }
+.mode-btn.active .mode-desc { color: rgba(232,255,71,0.4); }
+
+/* ── FREE PROMPT ── */
+.free-ta { width: 100%; min-height: 56px; margin-bottom: 20px; font-family: 'Noto Sans JP',sans-serif !important; font-size: 13px !important; }
+
+/* ── RUN ── */
+.run-btn {
+  width: 100%; background: var(--accent); border: none; border-radius: 4px;
+  color: #0d0d0d; cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: 3px; padding: 17px;
+  text-transform: uppercase; transition: opacity 0.18s; margin-bottom: 28px;
+  position: relative; overflow: hidden;
+}
+.run-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: translateX(-100%); transition: transform 0.4s;
+}
+.run-btn:hover:not(:disabled)::after { transform: translateX(100%); }
+.run-btn:disabled { opacity: 0.22; cursor: not-allowed; }
+
+/* ── THINKING ── */
+.thinking { display: none; align-items: center; gap: 10px; padding: 14px 0; color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+.thinking.on { display: flex; }
+.dots span { display: inline-block; width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: dp 1.2s infinite; margin-right: 2px; }
+.dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp { 0%,80%,100%{opacity:.2;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+
+/* ── OUTPUT ── */
+.out-wrap { display: none; }
+.out-wrap.on { display: block; }
+.out-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.out-title { font-family: 'Syne', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+.copy-btn {
+  background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--muted);
+  cursor: pointer; font-family: 'Syne', sans-serif; font-size: 10px; letter-spacing: 1.5px;
+  padding: 5px 11px; text-transform: uppercase; transition: all .18s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.out-body {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: 26px 30px; line-height: 1.9; font-size: 14px; white-space: pre-wrap; word-break: break-word;
+}
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div><span class="logo">JSON Synthesis</span><span class="logo-sub">/ 横断分析</span></div>
+    <span class="ver">v2.0</span>
+  </div>
+
+  <!-- ══ STEP 1 ══ -->
+  <div class="step-hdr">
+    <span class="step-badge active">Step 1</span>
+    <span class="step-title">JSONを読み込む</span>
+    <span class="step-note">APIキー不要</span>
+  </div>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-icon">⬇</div>
+    <div class="drop-txt"><strong>JSONファイルをドロップ</strong>またはクリックして選択（複数可）</div>
+  </div>
+  <input type="file" id="fileInput" accept=".json" multiple style="display:none">
+
+  <div class="dvd"><span>または貼り付け</span></div>
+  <div class="paste-row">
+    <textarea id="pasteArea" placeholder='{"key": "value", ...}  ← JSON文字列をここに貼る'></textarea>
+    <button class="sm-btn" id="pasteBtn">追加</button>
+  </div>
+
+  <!-- CHIPS -->
+  <div id="chipsWrap" style="display:none;">
+    <div class="dvd"><span id="chipsLabel">0件</span></div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div id="previewWrap" style="display:none;">
+    <div class="dvd"><span>構造プレビュー</span></div>
+    <div class="preview-grid" id="previewGrid"></div>
+  </div>
+
+  <div class="section-sep"></div>
+
+  <!-- ══ STEP 2 ══ -->
+  <div class="step-hdr">
+    <span class="step-badge" id="step2badge">Step 2</span>
+    <span class="step-title">AIで分析する</span>
+  </div>
+
+  <!-- AI SELECT -->
+  <div class="dvd"><span>AIモデル</span></div>
+  <div class="ai-grid">
+    <button class="ai-btn active" data-ai="claude-sonnet">
+      <span class="ai-dot"></span>
+      <span class="ai-label">Claude</span>
+      <span class="ai-sub">Sonnet</span>
+    </button>
+    <button class="ai-btn" data-ai="claude-haiku">
+      <span class="ai-dot"></span>
+      <span class="ai-label">Claude</span>
+      <span class="ai-sub">Haiku · Fast</span>
+    </button>
+    <button class="ai-btn" data-ai="gemini">
+      <span class="ai-dot"></span>
+      <span class="ai-label">Gemini</span>
+      <span class="ai-sub">2.0 Flash</span>
+    </button>
+    <button class="ai-btn" data-ai="chatgpt">
+      <span class="ai-dot"></span>
+      <span class="ai-label">ChatGPT</span>
+      <span class="ai-sub">GPT-4o</span>
+    </button>
+  </div>
+
+  <!-- KEY -->
+  <div class="dvd"><span>APIキー</span></div>
+  <div class="key-row">
+    <input type="password" class="key-input" id="keyInput" placeholder="sk-ant-... / AIza... / sk-...">
+    <button class="sm-btn" id="keySave">Save</button>
+    <span class="key-status ok" id="keyStatus" style="display:none;">✓ SET</span>
+  </div>
+
+  <!-- MODES -->
+  <div class="dvd"><span>分析モード</span></div>
+  <div class="modes">
+    <button class="mode-btn active" data-mode="summary">
+      <span class="mode-icon">📋</span><span class="mode-name">まとめ</span><span class="mode-desc">横断サマリー</span>
+    </button>
+    <button class="mode-btn" data-mode="hypothesis">
+      <span class="mode-icon">💡</span><span class="mode-name">仮説</span><span class="mode-desc">示唆・洞察</span>
+    </button>
+    <button class="mode-btn" data-mode="questions">
+      <span class="mode-icon">❓</span><span class="mode-name">問い</span><span class="mode-desc">次の問い</span>
+    </button>
+    <button class="mode-btn" data-mode="yuta">
+      <span class="mode-icon">⚡</span><span class="mode-name">Yuta</span><span class="mode-desc">思考の前進</span>
+    </button>
+  </div>
+
+  <!-- FREE PROMPT -->
+  <div class="dvd"><span>追加指示（任意）</span></div>
+  <textarea id="freePrompt" class="free-ta" placeholder="例：マーケ戦略の観点でまとめて、Z世代トレンドとの接点を探して…"></textarea>
+
+  <!-- RUN -->
+  <button class="run-btn" id="runBtn" disabled>SYNTHESIZE →</button>
+
+  <!-- THINKING -->
+  <div class="thinking" id="thinking">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <span id="thinkTxt">分析中...</span>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="out-wrap" id="outWrap">
+    <div class="out-hdr">
+      <span class="out-title">Output</span>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+    <div class="out-body" id="outBody"></div>
+  </div>
+
+</div>
+<script>
+// ── PROMPTS ──
+const SYSTEM = {
+  summary:    `あなたは複数のJSONデータを横断的に分析するアナリストです。\n1. 各JSONの内容・性格を簡潔に説明\n2. JSONをまたいで見えてくる共通テーマ・パターン\n3. 注目すべきデータポイントや傾向\nMarkdown形式で日本語で回答してください。`,
+  hypothesis: `あなたは複数のJSONデータから仮説を構築するアナリストです。\n1. データが示唆する仮説を3〜5個提示\n2. 各仮説の根拠をデータから引用\n3. もっとも有望な仮説に★をつけ理由を述べる\n仮説は「〜ではないか」という検証可能な形で。Markdown形式で日本語で回答してください。`,
+  questions:  `あなたは複数のJSONデータから「次の問い」を導くファシリテーターです。\n1. データが答えていない問いを5〜7個列挙\n2. データ間の矛盾・ギャップ・見えていないもの\n3. 次にやるべきリサーチ・アクションの提案\nMarkdown形式で日本語で回答してください。`,
+  yuta:       `あなたはYutaの思考パートナーです。YutaはマーケティングGMSD部門ヘッドで、Z世代トレンド・AI・ブランド戦略に強い関心を持っています。\n1. Yutaが見落としているかもしれない視点を指摘\n2. Z世代・AI・マーケ戦略の観点からの示唆\n3. note.comの記事ネタや社内プレゼンで使えるフレーム\n4. 「思考を前に進める」ための具体的な次のアクション\n歯に衣着せず、鋭く。意外な接続や盲点を指摘してください。Markdown形式で日本語で回答してください。`
+};
+
+const AI_MODELS = {
+  'claude-sonnet': 'claude-sonnet-4-20250514',
+  'claude-haiku':  'claude-haiku-4-5-20251001',
+  'gemini':        'gemini-2.0-flash',
+  'chatgpt':       'gpt-4o'
+};
+
+// ── STATE ──
+let files = [], selectedAI = 'claude-sonnet', selectedMode = 'summary';
+const KEYS = { 'claude-sonnet': '', 'claude-haiku': '', gemini: '', chatgpt: '' };
+// Claude系は同じキーを共有
+function claudeKeyGroup(ai) { return ai.startsWith('claude') ? 'claude' : ai; }
+
+// ── KEY ──
+function saveKey() {
+  const v = document.getElementById('keyInput').value.trim();
+  const g = claudeKeyGroup(selectedAI);
+  if (selectedAI.startsWith('claude')) {
+    KEYS['claude-sonnet'] = v; KEYS['claude-haiku'] = v;
+  } else {
+    KEYS[selectedAI] = v;
+  }
+  try { localStorage.setItem('jsyn2_' + g, v); } catch {}
+  const btn = document.getElementById('keySave');
+  btn.textContent = 'Saved!';
+  setTimeout(() => { btn.textContent = 'Save'; }, 1200);
+  showKeyStatus();
+}
+
+function loadKey() {
+  const g = claudeKeyGroup(selectedAI);
+  let v = '';
+  try { v = localStorage.getItem('jsyn2_' + g) || ''; } catch {}
+  if (selectedAI.startsWith('claude')) {
+    KEYS['claude-sonnet'] = v; KEYS['claude-haiku'] = v;
+  } else {
+    KEYS[selectedAI] = v;
+  }
+  document.getElementById('keyInput').value = v;
+  const ph = selectedAI === 'gemini' ? 'AIza...' : selectedAI === 'chatgpt' ? 'sk-...' : 'sk-ant-...';
+  document.getElementById('keyInput').placeholder = ph;
+  showKeyStatus();
+}
+
+function showKeyStatus() {
+  const el = document.getElementById('keyStatus');
+  el.style.display = KEYS[selectedAI] ? 'inline-block' : 'none';
+  updateRun();
+}
+
+document.getElementById('keySave').addEventListener('click', saveKey);
+document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+
+// ── AI SWITCH ──
+document.querySelectorAll('.ai-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.ai-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  selectedAI = b.dataset.ai;
+  loadKey();
+}));
+
+// ── FILE ──
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
+
+function handleFiles(list) {
+  Array.from(list).forEach(f => {
+    if (!f.name.endsWith('.json')) return;
+    const r = new FileReader();
+    r.onload = ev => addFile(f.name, ev.target.result);
+    r.readAsText(f);
+  });
+}
+
+document.getElementById('pasteBtn').addEventListener('click', () => {
+  const txt = document.getElementById('pasteArea').value.trim();
+  if (!txt) return;
+  try { JSON.parse(txt); } catch { alert('JSONのパースに失敗しました。'); return; }
+  addFile('paste_' + Date.now() + '.json', txt);
+  document.getElementById('pasteArea').value = '';
+});
+
+function addFile(name, raw) {
+  if (files.some(f => f.name === name && f.raw.length === raw.length)) return;
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch {}
+  files.push({ id: Date.now() + Math.random(), name, raw, parsed });
+  renderChips();
+  renderPreviews();
+  updateRun();
+}
+
+function removeFile(id) {
+  files = files.filter(f => f.id !== id);
+  renderChips(); renderPreviews(); updateRun();
+}
+
+function renderChips() {
+  const wrap = document.getElementById('chipsWrap');
+  if (!files.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  document.getElementById('chipsLabel').textContent = files.length + '件 読み込み済み';
+  const el = document.getElementById('chips');
+  el.innerHTML = files.map(f =>
+    `<div class="chip">
+      <span class="chip-name">${esc(f.name)}</span>
+      <span class="chip-size">${fmt(f.raw.length)}</span>
+      <button class="chip-del" data-id="${f.id}">×</button>
+    </div>`
+  ).join('');
+  el.querySelectorAll('.chip-del').forEach(b =>
+    b.addEventListener('click', () => removeFile(parseFloat(b.dataset.id)))
+  );
+}
+
+// ── PREVIEW (API不要) ──
+function analyzeJSON(parsed) {
+  if (parsed === null) return { type: 'null', count: '-', keys: [] };
+
+  if (Array.isArray(parsed)) {
+    const item = parsed[0];
+    const keys = item && typeof item === 'object' ? Object.keys(item).slice(0, 8) : [];
+    return { type: 'Array', count: parsed.length + ' items', keys };
+  }
+
+  if (typeof parsed === 'object') {
+    const keys = Object.keys(parsed).slice(0, 8);
+    // 配列フィールドがあればその件数も
+    const arrayFields = keys.filter(k => Array.isArray(parsed[k]));
+    const extras = arrayFields.map(k => `${k}: ${parsed[k].length} items`);
+    return { type: 'Object', count: keys.length + ' keys', keys, extras };
+  }
+
+  return { type: typeof parsed, count: '-', keys: [] };
+}
+
+function renderPreviews() {
+  const wrap = document.getElementById('previewWrap');
+  if (!files.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  document.getElementById('step2badge').classList.add('active');
+
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = files.map(f => {
+    const info = analyzeJSON(f.parsed);
+    const keysHtml = info.keys.map(k => `<span class="preview-tag">${esc(k)}</span>`).join('');
+    const extrasHtml = (info.extras || []).map(e =>
+      `<div class="preview-row"><span class="preview-key">└</span><span class="preview-val" style="color:var(--muted)">${esc(e)}</span></div>`
+    ).join('');
+
+    return `<div class="preview-card">
+      <div class="preview-card-name">${esc(f.name)}</div>
+      <div class="preview-row">
+        <span class="preview-key">型</span>
+        <span class="preview-val">${info.type}</span>
+      </div>
+      <div class="preview-row">
+        <span class="preview-key">件数/サイズ</span>
+        <span class="preview-val">${info.count}</span>
+      </div>
+      <div class="preview-row">
+        <span class="preview-key">ファイルサイズ</span>
+        <span class="preview-val">${fmt(f.raw.length)}</span>
+      </div>
+      ${extrasHtml}
+      ${info.keys.length ? `<div class="preview-divider"></div><div class="preview-keys">${keysHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── MODES ──
+document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); selectedMode = b.dataset.mode;
+}));
+
+function updateRun() {
+  document.getElementById('runBtn').disabled = !(KEYS[selectedAI] && files.length);
+}
+
+// ── RUN ──
+document.getElementById('runBtn').addEventListener('click', run);
+
+async function run() {
+  const free = document.getElementById('freePrompt').value.trim();
+  const runBtn = document.getElementById('runBtn');
+  const thinking = document.getElementById('thinking');
+  const outWrap = document.getElementById('outWrap');
+  const outBody = document.getElementById('outBody');
+
+  runBtn.disabled = true;
+  outWrap.classList.remove('on');
+  outBody.textContent = '';
+  thinking.classList.add('on');
+
+  const modelName = AI_MODELS[selectedAI] || '';
+  document.getElementById('thinkTxt').textContent = `${selectedAI} で分析中...`;
+
+  let msg = `以下の${files.length}個のJSONデータを分析してください。\n\n`;
+  files.forEach((f, i) => {
+    const raw = f.raw.length > 20000 ? f.raw.slice(0, 20000) + '\n...(truncated)' : f.raw;
+    msg += `---\n【JSON ${i+1}: ${f.name}】\n${raw}\n\n`;
+  });
+  if (free) msg += `\n追加指示：${free}`;
+
+  try {
+    if (selectedAI.startsWith('claude')) await runClaude(msg, modelName, outBody, outWrap, thinking);
+    else if (selectedAI === 'gemini')    await runGemini(msg, outBody, outWrap, thinking);
+    else                                  await runGPT(msg, outBody, outWrap, thinking);
+  } catch (err) {
+    thinking.classList.remove('on');
+    outWrap.classList.add('on');
+    outBody.textContent = 'エラー: ' + err.message;
+  }
+
+  runBtn.disabled = false; updateRun();
+}
+
+async function runClaude(msg, model, outBody, outWrap, thinking) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': KEYS[selectedAI],
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      system: SYSTEM[selectedMode],
+      messages: [{ role: 'user', content: msg }],
+      stream: true
+    })
+  });
+  thinking.classList.remove('on'); outWrap.classList.add('on');
+  await streamSSE(res, outBody, evt => {
+    if (evt.type === 'content_block_delta' && evt.delta?.text) return evt.delta.text;
+  });
+}
+
+async function runGemini(msg, outBody, outWrap, thinking) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${KEYS.gemini}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: SYSTEM[selectedMode] + '\n\n' + msg }] }],
+        generationConfig: { maxOutputTokens: 2000 }
+      })
+    }
+  );
+  thinking.classList.remove('on'); outWrap.classList.add('on');
+  await streamSSE(res, outBody, evt => evt.candidates?.[0]?.content?.parts?.[0]?.text);
+}
+
+async function runGPT(msg, outBody, outWrap, thinking) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + KEYS.chatgpt },
+    body: JSON.stringify({
+      model: 'gpt-4o', max_tokens: 2000, stream: true,
+      messages: [{ role: 'system', content: SYSTEM[selectedMode] }, { role: 'user', content: msg }]
+    })
+  });
+  thinking.classList.remove('on'); outWrap.classList.add('on');
+  await streamSSE(res, outBody, evt => evt.choices?.[0]?.delta?.content);
+}
+
+async function streamSSE(res, outBody, extract) {
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const d = line.slice(6).trim();
+      if (!d || d === '[DONE]') continue;
+      try {
+        const txt = extract(JSON.parse(d));
+        if (txt) { full += txt; outBody.textContent = full; }
+      } catch {}
+    }
+  }
+}
+
+// ── COPY ──
+document.getElementById('copyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('outBody').textContent).then(() => {
+    const b = document.getElementById('copyBtn');
+    b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1500);
+  });
+});
+
+// ── UTILS ──
+function fmt(n) { return n < 1024 ? n + 'b' : (n/1024).toFixed(1) + 'kb'; }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── INIT ──
+loadKey();
+</script>
+</body>
+</html>
