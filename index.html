@@ -778,14 +778,19 @@
   const PROXY_CORSPROXY = 'https://corsproxy.io/?';
 
   async function fetchWithFallback(url) {
+    // GitHub PagesはCORS対応済みなので直接fetch
+    if (url.includes('github.io')) {
+      const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+      if (!r.ok) throw new Error('fetch failed');
+      return await r.text();
+    }
+    // その他（note RSS等）はプロキシ経由
     const encoded = encodeURIComponent(url);
-    // まずalloriginsを試す
     try {
       const r = await fetch(PROXY_ALLORIGINS + encoded, {signal: AbortSignal.timeout(4000)});
       const w = await r.json();
       if (w.contents) return w.contents;
     } catch(e) {}
-    // fallback: corsproxy.io
     const r2 = await fetch(PROXY_CORSPROXY + encoded, {signal: AbortSignal.timeout(5000)});
     return await r2.text();
   }
