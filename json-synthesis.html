@@ -113,6 +113,14 @@ textarea::placeholder { color: var(--dim); }
 .chip-size { color: var(--muted); font-size: 10px; }
 .chip-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; transition: color 0.15s; }
 .chip-del:hover { color: var(--accent2); }
+.chip-warn { font-size: 10px; color: var(--accent2); }
+.chip-full-toggle {
+  cursor: pointer; font-size: 10px; letter-spacing: 1px; font-family: 'Syne', sans-serif;
+  background: none; border: 1px solid var(--border2); border-radius: 2px;
+  color: var(--muted); padding: 2px 7px; transition: all 0.15s; text-transform: uppercase;
+}
+.chip-full-toggle:hover { border-color: var(--accent2); color: var(--accent2); }
+.chip-full-toggle.on { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,53,0.07); }
 
 /* ── PREVIEW ── */
 .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 32px; }
@@ -533,7 +541,8 @@ function addFile(name, raw) {
   if (files.some(f => f.name === name && f.raw.length === raw.length)) return;
   let parsed = null;
   try { parsed = JSON.parse(raw); } catch {}
-  files.push({ id: Date.now() + Math.random(), name, raw, parsed });
+  const large = raw.length > 50000; // 50KB超で警告
+  files.push({ id: Date.now() + Math.random(), name, raw, parsed, large, fullMode: false });
   renderChips();
   renderPreviews();
   updateRun();
@@ -544,21 +553,42 @@ function removeFile(id) {
   renderChips(); renderPreviews(); updateRun();
 }
 
+function toggleFullMode(id) {
+  const f = files.find(f => f.id === id);
+  if (!f) return;
+  if (!f.fullMode && f.raw.length > 300000) {
+    if (!confirm(`このファイルは${fmt(f.raw.length)}あります。全件送るとAPIの応答が遅くなるか、コンテキスト上限を超える可能性があります。続けますか？`)) return;
+  }
+  f.fullMode = !f.fullMode;
+  renderChips();
+}
+
 function renderChips() {
   const wrap = document.getElementById('chipsWrap');
   if (!files.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
   document.getElementById('chipsLabel').textContent = files.length + '件 読み込み済み';
   const el = document.getElementById('chips');
-  el.innerHTML = files.map(f =>
-    `<div class="chip">
+  el.innerHTML = files.map(f => {
+    const warnBadge = f.large
+      ? `<span class="chip-warn">⚠ 大</span>`
+      : '';
+    const toggleBtn = f.large
+      ? `<button class="chip-full-toggle ${f.fullMode ? 'on' : ''}" data-id="${f.id}">${f.fullMode ? '全件' : 'サンプル'}</button>`
+      : '';
+    return `<div class="chip">
       <span class="chip-name">${esc(f.name)}</span>
       <span class="chip-size">${fmt(f.raw.length)}</span>
+      ${warnBadge}
+      ${toggleBtn}
       <button class="chip-del" data-id="${f.id}">×</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
   el.querySelectorAll('.chip-del').forEach(b =>
     b.addEventListener('click', () => removeFile(parseFloat(b.dataset.id)))
+  );
+  el.querySelectorAll('.chip-full-toggle').forEach(b =>
+    b.addEventListener('click', () => toggleFullMode(parseFloat(b.dataset.id)))
   );
 }
 
@@ -628,6 +658,46 @@ function updateRun() {
   document.getElementById('runBtn').disabled = !(KEYS[selectedAI] && files.length);
 }
 
+// ── SMART SAMPLING ──
+const SAMPLE_LIMIT = 100000; // 100KB: サンプリング時の上限
+
+function smartSample(f) {
+  if (!f.large || f.fullMode) {
+    // 全件モード or 小さいファイル：100KBまで
+    if (f.raw.length <= SAMPLE_LIMIT) return { text: f.raw, note: null };
+    return { text: f.raw.slice(0, SAMPLE_LIMIT), note: `(先頭100KBのみ。全${fmt(f.raw.length)}中)` };
+  }
+
+  // サンプリングモード：配列なら先頭5・末尾5・ランダム10件
+  if (f.parsed && Array.isArray(f.parsed)) {
+    const arr = f.parsed;
+    const total = arr.length;
+    if (total <= 20) return { text: f.raw, note: null };
+
+    const head = arr.slice(0, 5);
+    const tail = arr.slice(-5);
+    // ランダム10件（重複なし、head/tail以外から）
+    const midIndices = [];
+    const used = new Set([...Array(5).keys(), ...Array.from({length:5},(_,i)=>total-5+i)]);
+    while (midIndices.length < Math.min(10, total - 10)) {
+      const r = Math.floor(Math.random() * total);
+      if (!used.has(r)) { used.add(r); midIndices.push(r); }
+    }
+    const mid = midIndices.sort((a,b)=>a-b).map(i => arr[i]);
+
+    const sampled = {
+      _sampling_note: `全${total}件中サンプル表示（先頭5件・末尾5件・ランダム${mid.length}件）`,
+      head, mid, tail
+    };
+    return { text: JSON.stringify(sampled, null, 2), note: `サンプリング済み（全${total}件→${20+mid.length}件抽出）` };
+  }
+
+  // オブジェクトの場合：50KBまで
+  const limit = 50000;
+  if (f.raw.length <= limit) return { text: f.raw, note: null };
+  return { text: f.raw.slice(0, limit), note: `(先頭50KBのみ。全${fmt(f.raw.length)}中)` };
+}
+
 // ── RUN ──
 document.getElementById('runBtn').addEventListener('click', run);
 
@@ -648,8 +718,10 @@ async function run() {
 
   let msg = `以下の${files.length}個のJSONデータを分析してください。\n\n`;
   files.forEach((f, i) => {
-    const raw = f.raw.length > 20000 ? f.raw.slice(0, 20000) + '\n...(truncated)' : f.raw;
-    msg += `---\n【JSON ${i+1}: ${f.name}】\n${raw}\n\n`;
+    const { text, note } = smartSample(f);
+    msg += `---\n【JSON ${i+1}: ${f.name}】`;
+    if (note) msg += ` ※${note}`;
+    msg += `\n${text}\n\n`;
   });
   if (free) msg += `\n追加指示：${free}`;
 
