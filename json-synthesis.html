@@ -763,7 +763,7 @@ async function runClaude(msg, model, outBody, outWrap, thinking) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: SYSTEM[selectedMode],
       messages: [{ role: 'user', content: msg }],
       stream: true
@@ -784,7 +784,8 @@ async function runGemini(msg, outBody, outWrap, thinking) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: SYSTEM[selectedMode] + '\n\n' + msg }] }],
-        generationConfig: { maxOutputTokens: 4000 }
+        generationConfig: { maxOutputTokens: 8000 },
+        thinkingConfig: { thinkingBudget: 0 }
       })
     }
   );
@@ -798,7 +799,7 @@ async function runGPT(msg, outBody, outWrap, thinking) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + KEYS.chatgpt },
     body: JSON.stringify({
-      model: 'gpt-4o', max_tokens: 4000, stream: true,
+      model: 'gpt-4o', max_tokens: 8000, stream: true,
       messages: [{ role: 'system', content: SYSTEM[selectedMode] }, { role: 'user', content: msg }]
     })
   });
