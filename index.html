@@ -763,7 +763,7 @@
   document.querySelectorAll('.stat-num').forEach(el => {
     const raw = el.textContent.trim();
     const target = parseInt(raw.replace(',', ''));
-    if (isNaN(target) || target > 3000) return;
+    if (isNaN(target) || target > 3000 || raw === '2026') return;
     let current = 0;
     const step = Math.ceil(target / 40);
     const timer = setInterval(() => {
@@ -774,16 +774,27 @@
   });
 
   // ── CORS proxy helper ──
-  const PROXY = 'https://api.allorigins.win/get?url=';
+  const PROXY_ALLORIGINS = 'https://api.allorigins.win/get?url=';
+  const PROXY_CORSPROXY = 'https://corsproxy.io/?';
+
+  async function fetchWithFallback(url) {
+    const encoded = encodeURIComponent(url);
+    // まずalloriginsを試す
+    try {
+      const r = await fetch(PROXY_ALLORIGINS + encoded, {signal: AbortSignal.timeout(4000)});
+      const w = await r.json();
+      if (w.contents) return w.contents;
+    } catch(e) {}
+    // fallback: corsproxy.io
+    const r2 = await fetch(PROXY_CORSPROXY + encoded, {signal: AbortSignal.timeout(5000)});
+    return await r2.text();
+  }
 
   // ── Atlas feed ──
   async function loadAtlas() {
     const el = document.getElementById('atlas-content');
     try {
-      const url = encodeURIComponent('https://yutate.github.io/Atlas/data/atlas.json');
-      const res = await fetch(PROXY + url);
-      const wrapper = await res.json();
-      const data = JSON.parse(wrapper.contents);
+      const data = JSON.parse(await fetchWithFallback('https://yutate.github.io/Atlas/data/atlas.json'));
 
       // atlas.json: 配列、各エントリにdate/total_articles/categories[]
       const entries = Array.isArray(data) ? data : [];
@@ -809,10 +820,7 @@
   async function loadGenZ() {
     const el = document.getElementById('genz-content');
     try {
-      const url = encodeURIComponent('https://yutate.github.io/genz/data/zgene.json');
-      const res = await fetch(PROXY + url);
-      const wrapper = await res.json();
-      const data = JSON.parse(wrapper.contents);
+      const data = JSON.parse(await fetchWithFallback('https://yutate.github.io/genz/data/zgene.json'));
 
       const entries = data.list || data;
       // weeklyエントリのみ、最新
@@ -841,10 +849,7 @@
   async function loadNote() {
     const el = document.getElementById('note-content');
     try {
-      const url = encodeURIComponent('https://note.com/yutate/rss');
-      const res = await fetch(PROXY + url);
-      const wrapper = await res.json();
-      const xml = wrapper.contents;
+      const xml = await fetchWithFallback('https://note.com/yutate/rss');
       const parser = new DOMParser();
       const doc = parser.parseFromString(xml, 'text/xml');
       const items = Array.from(doc.querySelectorAll('item'));
