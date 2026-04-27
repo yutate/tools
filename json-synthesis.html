@@ -784,8 +784,7 @@ async function runGemini(msg, outBody, outWrap, thinking) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: SYSTEM[selectedMode] + '\n\n' + msg }] }],
-        generationConfig: { maxOutputTokens: 8000 },
-        thinkingConfig: { thinkingBudget: 0 }
+        generationConfig: { maxOutputTokens: 8000, thinkingConfig: { thinkingBudget: 0 } }
       })
     }
   );
