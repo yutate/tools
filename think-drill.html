@@ -886,7 +886,8 @@
 
   async function drillInto(cardQuestion, cardIndex) {
     const parent = history[history.length - 1];
-    history.push({ question: cardQuestion, cards: [] });
+    parent.chosen = cardIndex; // 選んだカードのindex記録
+    history.push({ question: cardQuestion, cards: [], chosen: null });
     currentDepth = history.length - 1;
     updateBreadcrumb();
     await generateCards(cardQuestion, parent.question);
@@ -988,7 +989,8 @@ ${modeDesc}
         cards = parseCards(text);
       }
 
-      history[history.length - 1].cards = cards;
+      history[history.length - 1].cards = cards.map(c => c.question);
+      history[history.length - 1].cardObjects = cards; // renderCards用
       renderCards(cards);
 
     } catch(e) {
@@ -1100,6 +1102,23 @@ ${modeDesc}
       const isLast = i === history.length - 1;
       const item = document.createElement('div');
       item.className = 'trail-item';
+
+      // 候補カード表示（次のdepthで選ばれなかったもの）
+      let candidatesHtml = '';
+      if (h.cards && h.cards.length > 0) {
+        const candidateItems = h.cards.map((q, ci) => {
+          const isChosen = h.chosen === ci;
+          return `<div style="font-size:11px;padding:4px 8px;margin-top:4px;border-radius:3px;
+            background:${isChosen ? 'rgba(245,166,35,0.1)' : 'rgba(255,255,255,0.03)'};
+            color:${isChosen ? 'var(--accent)' : 'var(--text3)'};
+            border:1px solid ${isChosen ? 'rgba(245,166,35,0.2)' : 'var(--border)'};
+            font-family:'Noto Sans JP',sans-serif;line-height:1.5;">
+            ${isChosen ? '▶ ' : ''}${escHtml(q)}
+          </div>`;
+        }).join('');
+        candidatesHtml = `<div style="margin-top:8px;">${candidateItems}</div>`;
+      }
+
       item.innerHTML = `
         <div class="trail-line">
           <div class="trail-dot${i === 0 ? ' start' : ''}"></div>
@@ -1108,6 +1127,7 @@ ${modeDesc}
         <div class="trail-content">
           <div class="trail-depth">${i === 0 ? 'START' : 'DEPTH ' + i}</div>
           <div class="trail-question">${escHtml(h.question)}</div>
+          ${candidatesHtml}
         </div>
       `;
       trail.appendChild(item);
@@ -1135,7 +1155,12 @@ ${modeDesc}
       mode,
       depth: history.length - 1,
       created_at: new Date().toISOString(),
-      trail: history.map((h, i) => ({ depth: i, question: h.question }))
+      trail: history.map((h, i) => ({
+        depth: i,
+        question: h.question,
+        chosen: h.chosen !== undefined ? h.chosen : null,
+        candidates: h.cards || []
+      }))
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
