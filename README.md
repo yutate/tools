@@ -13,6 +13,7 @@
 
 | ツール | URL | 概要 |
 |--------|-----|------|
+| Think Drill | [/tools/think-drill.html](https://yutate.github.io/tools/think-drill.html) | 問いカードを選んで潜る思考探索ツール |
 | JSON Synthesis | [/tools/json-synthesis.html](https://yutate.github.io/tools/json-synthesis.html) | 複数JSONをAIで横断分析・合成 |
 
 ### Research
@@ -51,6 +52,7 @@
 ```
 tools/
 ├── index.html          # ポータル（全ツール入口）
+├── think-drill.html    # 思考探索ツール
 └── json-synthesis.html # JSON横断分析ツール
 ```
 
@@ -63,6 +65,24 @@ tools/
 - インストール不要・シングルファイルHTML
 - APIキーはツール内でlocalStorageに保存
 - 対応AI: Claude Sonnet / Haiku / Gemini 2.0 Flash / GPT-4o（ツールによる）
+
+---
+
+## Think Drill 詳細
+
+行き詰まりを「掘り下げる」思考探索ツール。問いを入力すると、AIが3〜4枚の問いカードを生成。カードを選んで潜るたびに思考が深くなる。
+
+### 機能
+
+| 機能 | 内容 |
+|------|------|
+| 2モード | 広げる（可能性を拡張）/ 絞る（本質に向かう） |
+| 問いカード | タップするたびに深く掘れる、深さをdotで可視化 |
+| パンくず | どこから来たか見えて、任意の深さに戻れる |
+| まとめて見る | 軌跡を縦に俯瞰、コピー＋JSON書き出し対応 |
+| マルチAI | Claude Sonnet 4.6 / Haiku 4.5 / Gemini 2.5 Flash / Flash-Lite / GPT-4o / GPT-4o mini |
+
+APIキーはlocalStorageにモデルごとに保存。
 
 ---
 
