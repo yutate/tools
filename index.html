@@ -365,6 +365,90 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── OS Map Card (full-width featured) ── */
+  .os-map-card {
+    display: block;
+    text-decoration: none;
+    color: var(--text);
+    background: linear-gradient(135deg, #081420 0%, #0a1a1a 50%, #080c10 100%);
+    border: 1px solid rgba(0,229,255,0.22);
+    border-radius: 10px;
+    padding: 32px 36px;
+    margin-bottom: 56px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+  }
+  .os-map-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), rgba(0,201,177,0.6), transparent);
+    transform: scaleX(0); transform-origin: left; transition: transform 0.35s;
+  }
+  .os-map-card:hover {
+    border-color: rgba(0,229,255,0.45);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,255,0.15) inset;
+    transform: translateY(-2px);
+  }
+  .os-map-card:hover::before { transform: scaleX(1); }
+  .os-map-card::after {
+    content: ''; position: absolute;
+    top: -60px; right: -60px; width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .os-map-card-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 32px; flex-wrap: wrap; position: relative; z-index: 1;
+  }
+  .os-map-card-left { flex: 1; min-width: 220px; }
+  .os-map-card-eyebrow {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px; opacity: 0.8;
+  }
+  .os-map-card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(20px, 3vw, 26px); font-weight: 800;
+    color: var(--text); line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 10px;
+  }
+  .os-map-card-title span { color: var(--accent); }
+  .os-map-card-desc {
+    font-size: 12px; color: var(--text2); line-height: 1.75;
+    max-width: 480px; margin-bottom: 18px;
+  }
+  .os-map-card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .os-map-card-tag {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    padding: 3px 9px; border-radius: 2px;
+    border: 1px solid rgba(0,229,255,0.18); color: rgba(0,229,255,0.55);
+    letter-spacing: 0.08em; text-transform: uppercase; background: rgba(0,229,255,0.04);
+  }
+  .os-map-card-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 14px; flex-shrink: 0;
+  }
+  .os-map-card-stats { display: flex; gap: 20px; flex-wrap: wrap; justify-content: flex-end; }
+  .os-map-stat { text-align: center; }
+  .os-map-stat-num {
+    font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700;
+    color: var(--accent); display: block; line-height: 1; margin-bottom: 4px;
+  }
+  .os-map-stat-label { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+  .os-map-card-cta {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 10px 20px; border: 1px solid rgba(0,229,255,0.35); border-radius: 3px;
+    color: var(--accent); background: rgba(0,229,255,0.06); transition: all 0.18s; white-space: nowrap;
+  }
+  .os-map-card:hover .os-map-card-cta { background: rgba(0,229,255,0.14); border-color: var(--accent); }
+  @media (max-width: 640px) {
+    .os-map-card { padding: 22px 20px; }
+    .os-map-card-right { align-items: flex-start; }
+    .os-map-card-stats { justify-content: flex-start; }
+    .os-map-card-cta { width: 100%; text-align: center; }
+  }
+
   /* Scanline overlay */
   .scanlines {
     position: fixed;
@@ -429,6 +513,44 @@
       <span class="stat-label">Active</span>
     </div>
   </div>
+
+  <!-- AI Marketing OS Map — full-width entry -->
+  <a href="./os-map.html" class="os-map-card">
+    <div class="os-map-card-inner">
+      <div class="os-map-card-left">
+        <div class="os-map-card-eyebrow">// OS Explorer — v0.4</div>
+        <div class="os-map-card-title">AI Marketing <span>OS</span> Map</div>
+        <div class="os-map-card-desc">
+          AIマーケティング意思決定の構造を探索するインタラクティブマップ。
+          Intelligence → Understanding → Strategy → Allocation → Execution の思考フローと、
+          各レイヤーを担う実装ツールを接続して可視化。
+        </div>
+        <div class="os-map-card-tags">
+          <span class="os-map-card-tag">OS Architecture</span>
+          <span class="os-map-card-tag">14 Tools Mapped</span>
+          <span class="os-map-card-tag">Agent Layer</span>
+          <span class="os-map-card-tag">Interactive</span>
+        </div>
+      </div>
+      <div class="os-map-card-right">
+        <div class="os-map-card-stats">
+          <div class="os-map-stat">
+            <span class="os-map-stat-num">9</span>
+            <span class="os-map-stat-label">Layers</span>
+          </div>
+          <div class="os-map-stat">
+            <span class="os-map-stat-num">14</span>
+            <span class="os-map-stat-label">Tools</span>
+          </div>
+          <div class="os-map-stat">
+            <span class="os-map-stat-num">8</span>
+            <span class="os-map-stat-label">Live</span>
+          </div>
+        </div>
+        <div class="os-map-card-cta">Explore OS Map →</div>
+      </div>
+    </div>
+  </a>
 
   <!-- Intelligence -->
   <section class="section">
