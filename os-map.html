@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Marketing OS Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #080c10;
+  --bg2:        #0b1520;
+  --bg3:        #0f1c2c;
+  --bg-tool:    #091016;
+  --cyan:       #00e5ff;
+  --cyan-dim:   rgba(0,229,255,0.08);
+  --cyan-glow:  rgba(0,229,255,0.34);
+  --green:      #2ecc89;
+  --purple:     #9d82f5;
+  --amber:      #f5c842;
+  --teal:       #00c9b1;   /* Intelligence/Research accent */
+  --border:     rgba(0,229,255,0.13);
+  --border2:    rgba(0,229,255,0.06);
+  --text-hi:    #eaf4ff;
+  --text:       #8eb0c8;
+  --text-mid:   #5a7a90;
+  --text-dim:   #2e4a58;
+  --font-mono:  'Space Mono', monospace;
+  --font-sans:  'Syne', sans-serif;
+}
+
+body { background:var(--bg); color:var(--text); font-family:var(--font-mono); min-height:100vh; }
+
+/* ══ SECTION ══ */
+#os-map-section {
+  width:100%; padding:80px 0 100px;
+  position:relative; overflow:hidden;
+}
+#os-map-section::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px);
+  background-size:60px 60px; pointer-events:none;
+}
+.os-container { max-width:1120px; margin:0 auto; padding:0 28px; position:relative; }
+
+/* ══ HEADER ══ */
+.os-header { text-align:center; margin-bottom:42px; }
+.os-eyebrow {
+  display:inline-block; font-size:11px; letter-spacing:0.22em;
+  color:var(--cyan); text-transform:uppercase; margin-bottom:14px;
+  padding:5px 14px; border:1px solid var(--border); border-radius:2px;
+}
+.os-title {
+  font-family:var(--font-sans); font-size:clamp(26px,4.5vw,44px);
+  font-weight:800; color:var(--text-hi); line-height:1.1;
+  letter-spacing:-0.02em; margin-bottom:11px;
+}
+.os-title span { color:var(--cyan); }
+.os-sub { font-size:13px; color:var(--text-mid); letter-spacing:0.03em; line-height:1.7; }
+
+/* ══ CONTROLS ══ */
+.os-controls {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; flex-wrap:wrap; margin-bottom:26px;
+}
+.ctrl-label { font-size:11px; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
+.ctrl-btn {
+  font-family:var(--font-mono); font-size:11px; letter-spacing:0.10em;
+  text-transform:uppercase; padding:8px 18px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--text-mid); cursor:pointer; transition:all 0.16s; border-radius:3px;
+}
+.ctrl-btn:hover        { border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); }
+.ctrl-btn.active       { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+.ctrl-btn.agent-btn.active { border-color:var(--green); color:var(--green); background:rgba(46,204,137,0.07); }
+.ctrl-sep { width:1px; height:20px; background:var(--border2); }
+
+/* ══ MAP ══ */
+.os-map-wrap {
+  position:relative; width:100%;
+  aspect-ratio:16/8.5; min-height:420px; max-height:700px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:6px; overflow:hidden;
+}
+@media (max-width:640px) { .os-map-wrap { aspect-ratio:unset; height:520px; } }
+
+#os-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* Edges */
+.edge { fill:none; stroke-width:1.2; }
+.edge.c-edge   { stroke:rgba(0,229,255,0.20); }
+.edge.f-edge   { stroke:rgba(157,130,245,0.16); stroke-dasharray:6 6; stroke-width:1; }
+.edge.a-edge   { stroke:rgba(46,204,137,0.13); stroke-dasharray:3 7; stroke-width:0.9; }
+.edge.i-edge   { stroke:rgba(0,201,177,0.22); stroke-dasharray:4 4; stroke-width:1; } /* intelligence feed */
+.edge.active   { stroke-width:2; }
+.edge.c-edge.active { stroke:rgba(0,229,255,0.62); }
+.edge.f-edge.active { stroke:rgba(157,130,245,0.52); stroke-dasharray:none; }
+.edge.i-edge.active { stroke:rgba(0,201,177,0.60); stroke-dasharray:none; }
+.edge.flow-lit {
+  stroke:rgba(0,229,255,0.72)!important; stroke-width:2.2!important;
+  stroke-dasharray:none!important; filter:drop-shadow(0 0 4px rgba(0,229,255,0.5));
+}
+
+/* ══ NODES — BASE ══ */
+.node {
+  position:absolute; transform:translate(-50%,-50%);
+  cursor:pointer; z-index:10; user-select:none;
+}
+.node-inner {
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:4px;
+  transition:transform 0.22s, box-shadow 0.22s;
+}
+.node:hover .node-inner,
+.node.active .node-inner { transform:scale(1.06); }
+
+/* ── Center (Customer Context / OS Core) ── */
+.node.center { cursor:default; }
+.node.center .node-inner {
+  width:116px; height:116px; border-radius:50%;
+  background:radial-gradient(circle at 36% 34%, #1d3e50, #050d18);
+  border:2px solid var(--cyan);
+  animation:breath 3.6s ease-in-out infinite;
+}
+@keyframes breath {
+  0%,100% { box-shadow:0 0 22px var(--cyan-glow),0 0 50px rgba(0,229,255,0.09); }
+  50%     { box-shadow:0 0 38px rgba(0,229,255,0.52),0 0 75px rgba(0,229,255,0.16); }
+}
+@media (max-width:640px) { .node.center .node-inner { width:84px; height:84px; } }
+
+.center-ring {
+  position:absolute; inset:-10px; border-radius:50%;
+  border:1px solid rgba(0,229,255,0.17); border-top-color:rgba(0,229,255,0.52);
+  animation:spin 9s linear infinite; pointer-events:none;
+}
+.center-ring-2 {
+  position:absolute; inset:-18px; border-radius:50%;
+  border:1px dashed rgba(0,229,255,0.07); border-right-color:rgba(0,229,255,0.26);
+  animation:spin 16s linear infinite reverse; pointer-events:none;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Intelligence / Research — external banner (above map) ── */
+.intel-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 0;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #081a18, #050f0d);
+  border: 1px solid rgba(0,201,177,0.28);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  position: relative;
+}
+.intel-banner::after {
+  /* connector arrow pointing down into map */
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 8px;
+  background: rgba(0,201,177,0.35);
+}
+.intel-banner:hover,
+.intel-banner.active {
+  border-color: rgba(0,201,177,0.55);
+  background: linear-gradient(135deg, #0c2220, #070f0d);
+}
+.intel-banner.active { border-color: var(--teal); }
+
+.intel-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.intel-banner-icon {
+  font-size: 16px;
+  color: var(--teal);
+  animation: intel-breath 4s ease-in-out infinite;
+}
+@keyframes intel-breath {
+  0%,100% { opacity: 0.7; text-shadow: 0 0 8px rgba(0,201,177,0.3); }
+  50%     { opacity: 1;   text-shadow: 0 0 16px rgba(0,201,177,0.6); }
+}
+
+.intel-banner-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0,220,195,0.85);
+  font-family: var(--font-mono);
+}
+
+.intel-banner-sub {
+  font-size: 11px;
+  color: var(--text-mid);
+  letter-spacing: 0.02em;
+}
+
+.intel-banner-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.intel-tool-chip {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border: 1px solid rgba(0,201,177,0.22);
+  border-radius: 2px;
+  color: rgba(0,220,195,0.70);
+  background: rgba(0,201,177,0.05);
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.intel-tool-chip:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: rgba(0,201,177,0.10);
+}
+.intel-tool-chip::after { content: ' ↗'; opacity: 0.5; font-size: 9px; }
+
+.intel-banner-count {
+  font-size: 10px;
+  color: rgba(0,201,177,0.45);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* map gets top corners squared when banner present */
+.os-map-wrap.has-intel-banner {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+@media (max-width: 640px) {
+  .intel-banner { padding: 10px 14px; flex-wrap: wrap; gap: 10px; }
+  .intel-banner-sub { display: none; }
+  .intel-tool-chip { font-size: 9px; padding: 3px 8px; }
+  .intel-banner-tools { gap: 6px; }
+}
+
+/* ── Orbital nodes ── */
+.node.orbital .node-inner {
+  width:108px; height:100px; border-radius:8px;
+  padding:7px 7px 5px; box-shadow:0 4px 24px rgba(0,0,0,0.5);
+}
+@media (max-width:640px) { .node.orbital .node-inner { width:74px; height:70px; padding:5px 4px 4px; } }
+
+.node.orbital.status-live .node-inner {
+  background:linear-gradient(145deg, #0d2030, #0a1820);
+  border:1px solid rgba(0,229,255,0.30);
+}
+.node.orbital.status-live:hover .node-inner,
+.node.orbital.status-live.active .node-inner {
+  border-color:var(--cyan);
+  box-shadow:0 0 22px var(--cyan-glow),0 4px 24px rgba(0,0,0,0.5);
+}
+.node.orbital.status-experimental .node-inner {
+  background:linear-gradient(145deg, #112018, #0b160f);
+  border:1px solid rgba(46,204,137,0.24);
+}
+.node.orbital.status-experimental:hover .node-inner,
+.node.orbital.status-experimental.active .node-inner {
+  border-color:var(--green);
+  box-shadow:0 0 22px rgba(46,204,137,0.35),0 4px 24px rgba(0,0,0,0.5);
+}
+.node.orbital.status-planned .node-inner {
+  background:linear-gradient(145deg, #110e20, #0c0b1c);
+  border:1.5px dashed rgba(157,130,245,0.26);
+  animation:wobble 6s ease-in-out infinite;
+}
+@keyframes wobble {
+  0%,100% { border-color:rgba(157,130,245,0.26); }
+  50%     { border-color:rgba(157,130,245,0.48); }
+}
+.node.orbital.status-planned:hover .node-inner,
+.node.orbital.status-planned.active .node-inner {
+  border-color:var(--purple); border-style:solid; animation:none;
+  box-shadow:0 0 22px rgba(157,130,245,0.36),0 4px 24px rgba(0,0,0,0.5);
+}
+
+/* Dim rules per view */
+.os-map-wrap.view-current .node.orbital.status-planned .node-inner { opacity:0.26; filter:saturate(0.15); }
+
+/* ── Agent nodes ── */
+.node.agent .node-inner {
+  width:70px; height:70px; border-radius:50%;
+  background:radial-gradient(circle at 38% 36%, #152820, #060e0b);
+  border:1px solid rgba(46,204,137,0.25);
+  box-shadow:0 0 12px rgba(46,204,137,0.11);
+}
+@media (max-width:640px) { .node.agent .node-inner { width:50px; height:50px; } }
+.os-map-wrap:not(.agents-on) .node.agent { opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.os-map-wrap.agents-on      .node.agent { opacity:1; transition:opacity 0.38s; }
+
+/* Node content */
+.node-icon { font-size:19px; line-height:1; color:var(--text-mid); }
+.node.center .node-icon { font-size:23px; color:var(--cyan); }
+.node.status-planned .node-icon { color:rgba(157,130,245,0.65); }
+.node.agent .node-icon { font-size:15px; color:var(--green); }
+@media (max-width:640px) { .node-icon { font-size:14px; } .node.center .node-icon { font-size:17px; } }
+
+.node-label { font-size:9.5px; letter-spacing:0.03em; text-align:center; color:var(--text-hi); line-height:1.3; }
+.node.center .node-label { font-size:10px; font-weight:700; color:var(--cyan); letter-spacing:0.07em; }
+.node.status-planned .node-label { color:rgba(200,185,255,0.78); }
+.node.agent .node-label { font-size:8px; color:var(--green); }
+@media (max-width:640px) { .node-label { font-size:7.5px; } .node.center .node-label { font-size:8px; } }
+
+.node-count { font-size:7.5px; letter-spacing:0.04em; color:var(--text-dim); line-height:1; margin-top:1px; }
+.node.status-live .node-count       { color:rgba(0,229,255,0.42); }
+.node.status-experimental .node-count { color:rgba(46,204,137,0.42); }
+.node.status-planned .node-count    { color:rgba(157,130,245,0.36); }
+@media (max-width:640px) { .node-count { display:none; } }
+
+.node-dot {
+  position:absolute; top:-5px; right:-5px;
+  width:9px; height:9px; border-radius:50%; border:1.5px solid var(--bg2);
+}
+
+/* ══ PULSE DOTS ══ */
+.pulse-dot { position:absolute; border-radius:50%; pointer-events:none; z-index:20; opacity:0; }
+.pulse-dot.c-pulse { width:7px; height:7px; background:var(--cyan);   box-shadow:0 0 10px var(--cyan); }
+.pulse-dot.f-pulse { width:5px; height:5px; background:var(--purple); box-shadow:0 0 8px var(--purple); }
+.pulse-dot.a-pulse { width:6px; height:6px; background:var(--green);  box-shadow:0 0 9px var(--green); }
+.pulse-dot.i-pulse { width:5px; height:5px; background:var(--teal);   box-shadow:0 0 9px var(--teal); }
+
+/* ══ TICKER ══ */
+.os-ticker {
+  margin-top:12px; height:34px; display:flex; align-items:center;
+  padding-left:16px; border-left:2px solid rgba(0,229,255,0.15);
+  overflow:hidden; position:relative;
+}
+.ticker-item {
+  position:absolute; font-size:12px; color:var(--cyan);
+  letter-spacing:0.07em; opacity:0; transition:opacity 0.5s; white-space:nowrap;
+}
+.ticker-item::before { content:'▸  '; opacity:0.5; }
+.ticker-item.show { opacity:0.78; }
+
+/* ══ DETAIL PANEL ══ */
+.os-detail {
+  margin-top:18px; background:var(--bg2);
+  border:1px solid var(--border2); border-radius:6px;
+  overflow:hidden; transition:border-color 0.22s;
+}
+.os-detail.active          { border-color:var(--border); }
+.os-detail.is-planned      { border-color:rgba(157,130,245,0.18); }
+.os-detail.is-intelligence { border-color:rgba(0,201,177,0.20); }
+
+.detail-hint {
+  display:flex; align-items:center; justify-content:center;
+  min-height:110px; font-size:13px; color:var(--text-dim); letter-spacing:0.08em;
+}
+
+/* Tab bar */
+.detail-tabs { display:flex; border-bottom:1px solid var(--border2); padding:0 28px; }
+@media (max-width:640px) { .detail-tabs { padding:0 14px; } }
+.dtab {
+  font-family:var(--font-mono); font-size:10px; letter-spacing:0.13em;
+  text-transform:uppercase; color:var(--text-dim);
+  padding:11px 14px 9px; cursor:pointer;
+  border-bottom:2px solid transparent; transition:all 0.15s;
+  background:none; border-top:none; border-left:none; border-right:none;
+}
+.dtab:hover  { color:var(--text-mid); }
+.dtab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+.os-detail.is-intelligence .dtab.active { color:var(--teal); border-bottom-color:var(--teal); }
+
+.detail-pane        { display:none; }
+.detail-pane.active { display:block; }
+
+/* Function pane layout */
+.detail-body { display:grid; grid-template-columns:1fr 210px; }
+@media (max-width:700px) { .detail-body { grid-template-columns:1fr; } }
+
+.detail-main { padding:26px 30px; border-right:1px solid var(--border2); }
+@media (max-width:700px) { .detail-main { padding:20px; border-right:none; border-bottom:1px solid var(--border2); } }
+
+.detail-top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+
+.detail-title { font-family:var(--font-sans); font-size:21px; font-weight:700; color:var(--cyan); line-height:1.1; }
+.detail-title.is-planned      { color:var(--purple); }
+.detail-title.is-intelligence { color:var(--teal); }
+
+.detail-badge {
+  font-size:10px; letter-spacing:0.13em; text-transform:uppercase;
+  padding:4px 10px; border-radius:2px; border:1px solid; flex-shrink:0;
+}
+
+.detail-desc { font-size:13.5px; color:var(--text-hi); line-height:1.88; margin-bottom:20px; letter-spacing:0.01em; }
+
+.detail-tools-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
+.detail-tools { display:flex; flex-direction:column; gap:6px; }
+
+/* Tool rows */
+.tool-row { border:1px solid var(--border2); border-radius:4px; overflow:hidden; transition:border-color 0.15s; }
+.tool-row:hover   { border-color:var(--border); }
+.tool-row.expanded { border-color:var(--border); }
+
+.tool-row-header {
+  display:flex; align-items:center; gap:10px; padding:9px 14px;
+  cursor:pointer; background:transparent; transition:background 0.15s;
+}
+.tool-row-header:hover { background:rgba(0,229,255,0.03); }
+
+.tool-row-icon { font-size:9px; color:var(--text-dim); transition:transform 0.2s; flex-shrink:0; }
+.tool-row.expanded .tool-row-icon { transform:rotate(90deg); color:var(--cyan); }
+
+.tool-row-name { font-size:12px; color:var(--text-hi); letter-spacing:0.04em; flex:1; }
+
+.tool-row-status {
+  font-size:9px; letter-spacing:0.10em; text-transform:uppercase;
+  padding:2px 8px; border-radius:2px; border:1px solid; flex-shrink:0;
+}
+
+.tool-row-link {
+  font-size:10px; color:var(--cyan); text-decoration:none; opacity:0.65;
+  padding:2px 6px; flex-shrink:0; transition:opacity 0.15s;
+}
+.tool-row-link:hover { opacity:1; }
+
+.tool-detail-expand {
+  display:none; padding:0 14px 14px; border-top:1px solid var(--border2); background:var(--bg-tool);
+}
+.tool-row.expanded .tool-detail-expand { display:block; }
+
+.tool-flow {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  margin:12px 0; padding:10px 12px;
+  background:rgba(0,229,255,0.04); border-radius:3px; border-left:2px solid rgba(0,229,255,0.20);
+}
+.flow-node-chip {
+  font-size:9px; letter-spacing:0.08em; text-transform:uppercase;
+  padding:3px 9px; border-radius:2px; border:1px solid; white-space:nowrap;
+}
+.flow-node-chip.upstream      { border-color:rgba(0,229,255,0.22); color:var(--cyan); background:var(--cyan-dim); }
+.flow-node-chip.current-layer { border-color:var(--cyan); color:var(--bg); background:var(--cyan); font-weight:700; }
+.flow-node-chip.downstream    { border-color:rgba(0,229,255,0.22); color:var(--cyan); background:var(--cyan-dim); }
+.flow-arrow { font-size:10px; color:var(--text-dim); }
+
+.tool-role-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+@media (max-width:500px) { .tool-role-grid { grid-template-columns:1fr; } }
+.tool-role-label { font-size:9px; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:5px; }
+.tool-role-label.human { color:#82c8e5; }
+.tool-role-label.ai    { color:var(--purple); }
+.tool-role-text { font-size:11.5px; color:var(--text-hi); line-height:1.7; letter-spacing:0.01em; }
+.tool-purpose { font-size:12px; color:var(--text); line-height:1.7; margin-top:10px; padding-top:10px; border-top:1px solid var(--border2); }
+
+/* Signals column */
+.detail-signals { padding:26px 20px; display:flex; flex-direction:column; }
+@media (max-width:700px) { .detail-signals { padding:14px 20px; flex-direction:row; flex-wrap:wrap; gap:8px; } }
+.signals-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); margin-bottom:12px; }
+@media (max-width:700px) { .signals-label { width:100%; margin-bottom:4px; } }
+.signal-item {
+  font-size:12px; color:var(--text-mid); letter-spacing:0.04em;
+  padding:10px 12px; margin-bottom:6px;
+  border-left:2px solid var(--border2); border-radius:0 3px 3px 0;
+  display:flex; align-items:center; gap:8px; line-height:1.4; transition:all 0.22s;
+}
+.signal-item::before { content:'▸'; font-size:9px; opacity:0.32; flex-shrink:0; }
+.signal-item.firing { border-color:var(--cyan); color:var(--text-hi); background:var(--cyan-dim); }
+.signal-item.firing::before { opacity:1; }
+@media (max-width:700px) { .signal-item { margin-bottom:0; padding:7px 10px; font-size:11px; } }
+
+/* OS Position pane */
+.ospos-wrap { padding:24px 30px; }
+@media (max-width:640px) { .ospos-wrap { padding:18px 18px; } }
+.ospos-title { font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim); margin-bottom:18px; }
+
+.arch-chain { display:flex; align-items:stretch; flex-wrap:wrap; margin-bottom:22px; }
+.arch-node { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:64px; }
+.arch-node-box {
+  padding:6px 10px; border-radius:4px; border:1px solid;
+  font-size:9px; letter-spacing:0.06em; text-align:center; line-height:1.3; white-space:nowrap;
+}
+.arch-node-box.dim        { border-color:var(--border2); color:var(--text-dim); background:transparent; }
+.arch-node-box.upstream   { border-color:rgba(0,229,255,0.22); color:var(--text); background:var(--cyan-dim); }
+.arch-node-box.self       { border-color:var(--cyan); color:var(--text-hi); background:rgba(0,229,255,0.12); font-weight:700; }
+.arch-node-box.downstream { border-color:rgba(0,229,255,0.22); color:var(--text); background:var(--cyan-dim); }
+.arch-node-box.intel      { border-color:rgba(0,201,177,0.30); color:var(--teal); background:rgba(0,201,177,0.06); }
+.arch-node-label { font-size:8px; color:var(--text-dim); text-align:center; line-height:1.2; }
+.arch-arrow { display:flex; align-items:center; padding:0 3px; color:var(--text-dim); font-size:11px; margin-bottom:20px; }
+
+.ospos-tools { display:flex; flex-direction:column; gap:7px; }
+.ospos-tool-item {
+  display:flex; align-items:center; gap:12px; padding:10px 14px;
+  border:1px solid var(--border2); border-radius:4px; background:var(--bg-tool);
+  text-decoration:none; transition:border-color 0.15s, background 0.15s;
+}
+.ospos-tool-item:hover { border-color:var(--border); background:rgba(0,229,255,0.02); }
+.ospos-tool-name    { font-size:13px; color:var(--text-hi); letter-spacing:0.03em; flex:1; }
+.ospos-tool-purpose { font-size:11px; color:var(--text-mid); letter-spacing:0.02em; line-height:1.5; flex:2; }
+.ospos-tool-badge   { font-size:9px; letter-spacing:0.10em; text-transform:uppercase; padding:3px 9px; border-radius:2px; border:1px solid; flex-shrink:0; }
+.ospos-tool-arrow   { font-size:12px; color:var(--text-dim); flex-shrink:0; }
+@media (max-width:600px) { .ospos-tool-item { flex-wrap:wrap; } .ospos-tool-purpose { display:none; } }
+
+/* Philosophy pane */
+.phil-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border2); }
+@media (max-width:640px) { .phil-grid { grid-template-columns:1fr; } }
+.phil-cell { background:var(--bg2); padding:22px 26px; }
+@media (max-width:640px) { .phil-cell { padding:16px 18px; } }
+.phil-cell-label { font-size:10px; letter-spacing:0.17em; text-transform:uppercase; margin-bottom:9px; display:flex; align-items:center; gap:7px; }
+.pill-icon { font-size:11px; opacity:0.7; }
+.why-label    { color:var(--cyan); }
+.change-label { color:var(--amber); }
+.human-label  { color:#82c8e5; }
+.ai-label     { color:var(--purple); }
+.phil-cell-text { font-size:13px; color:var(--text-hi); line-height:1.85; letter-spacing:0.01em; }
+
+/* ══ LEGEND ══ */
+.os-legend { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:16px; }
+.legend-item { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-mid); letter-spacing:0.06em; }
+.legend-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.legend-line { width:24px; height:2px; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<section id="os-map-section">
+  <div class="os-container">
+
+    <div class="os-header">
+      <span class="os-eyebrow">OS Explorer — v0.4</span>
+      <h2 class="os-title">AI Marketing <span>OS</span> Map</h2>
+      <p class="os-sub">From human understanding to autonomous marketing decisions.</p>
+    </div>
+
+    <div class="os-controls" id="os-controls">
+      <span class="ctrl-label">View:</span>
+      <div class="ctrl-sep"></div>
+      <button class="ctrl-btn agent-btn" id="btn-agents" onclick="toggleAgents()">Agent Mode</button>
+    </div>
+
+    <div class="intel-banner" id="intel-banner" onclick="pick('intelligence')">
+      <div class="intel-banner-left">
+        <span class="intel-banner-icon">◉</span>
+        <div>
+          <div class="intel-banner-label">Intelligence / Research</div>
+          <div class="intel-banner-sub">External data feed — signals routed into OS layers</div>
+        </div>
+      </div>
+      <div class="intel-banner-tools" id="intel-banner-tools">
+        <!-- injected by JS -->
+      </div>
+      <div class="intel-banner-count" id="intel-banner-count"></div>
+    </div>
+
+    <div class="os-map-wrap view-current has-intel-banner" id="os-map">
+      <svg id="os-svg"></svg>
+    </div>
+
+    <div class="os-ticker">
+      <span class="ticker-item show" id="ticker-text">Intent detected — strategy layer active</span>
+    </div>
+
+    <div class="os-detail" id="os-detail">
+      <p class="detail-hint">Select a layer to explore its role in the OS</p>
+    </div>
+
+    <div class="os-legend" id="os-legend"></div>
+
+  </div>
+</section>
+
+<script>
+// ══════════════════════════════════════════════════
+//  STATUS CONFIG
+// ══════════════════════════════════════════════════
+const STATUS_CONFIG = {
+  live: {
+    label:'Live', color:'#00e5ff', borderStyle:'solid',
+    dimInViews:[], nodeClass:'status-live', dotGlow:true,
+  },
+  experimental: {
+    label:'Experimental', color:'#2ecc89', borderStyle:'solid',
+    dimInViews:[], nodeClass:'status-experimental', dotGlow:true,
+  },
+  planned: {
+    label:'Planned', color:'#9d82f5', borderStyle:'dashed',
+    dimInViews:['current'], nodeClass:'status-planned', dotGlow:false,
+  },
+  // Extend here: prototype, vision, ...
+};
+
+function sc(s) { return STATUS_CONFIG[s] || STATUS_CONFIG.planned; }
+
+// ══════════════════════════════════════════════════
+//  VIEW MODES
+// ══════════════════════════════════════════════════
+const VIEW_MODES = [
+  { id:'current', label:'Current', showStatuses:['live','experimental'] },
+  { id:'future',  label:'Future',  showStatuses:['live','experimental','planned'] },
+];
+
+// ══════════════════════════════════════════════════
+//  TOOL REGISTRY
+// ══════════════════════════════════════════════════
+const TOOLS = [
+  // ── Intelligence / Research ──
+  {
+    id:'atlas-dashboard', name:'ATLAS Dashboard',
+    layer:'intelligence', status:'live',
+    url:'https://yutate.github.io/Atlas/',
+    purpose:'Daily intelligence log — ChatGPT-generated ATLAS pushed as JSON, visualized and searchable.',
+    humanRole:'Define what signals matter each day. Curate which insights inform downstream decisions.',
+    aiRole:'Parse, structure, and surface patterns across daily intelligence entries.',
+    upstream:[], downstream:['understanding','strategy'],
+  },
+  {
+    id:'genz-signal-personal', name:'Z世代 Signal (Personal)',
+    layer:'intelligence', status:'live',
+    url:'https://yutate.github.io/genz/',
+    purpose:'Weekly Gen-Z trend tracking — 1,183 articles, 33 weeks, essay-driven analysis.',
+    humanRole:'Write weekly essays; interpret cultural signals that quantitative data misses.',
+    aiRole:'Aggregate, categorize, and surface keyword trends across 33+ weeks of data.',
+    upstream:[], downstream:['understanding'],
+  },
+  {
+    id:'genz-signal-team', name:'Z世代 Signal (Team)',
+    layer:'intelligence', status:'live',
+    url:'https://yutate.github.io/genz/team/',
+    purpose:'Team-facing view of the Gen-Z signal dashboard — same data, optimized layout for sharing.',
+    humanRole:'Facilitate team discussion around emerging signals and their strategic implications.',
+    aiRole:'Present the same intelligence layer in a format optimized for collaborative review.',
+    upstream:[], downstream:['understanding'],
+  },
+
+  // ── Understanding ──
+  {
+    id:'customer-design', name:'Customer Design',
+    layer:'understanding', status:'live',
+    url:'https://yutate.github.io/customer-design/',
+    purpose:'Structured 3–4 turn AI conversation to surface customer insight and design constraints.',
+    humanRole:'Guide the conversation; validate AI interpretations against lived customer knowledge.',
+    aiRole:'Generate structured insight from conversational input across four AI modes.',
+    upstream:['intelligence'], downstream:['strategy'],
+  },
+  {
+    id:'persona-talk', name:'Persona Talk',
+    layer:'understanding', status:'live',
+    url:'https://yutate.github.io/genz/persona.html',
+    purpose:'Multi-AI dialogue with dynamically generated Gen-Z audience personas.',
+    humanRole:'Design the persona brief; interpret nuance in dialogue that data cannot capture.',
+    aiRole:'Synthesize audience archetypes and simulate behavioral responses at scale.',
+    upstream:['intelligence'], downstream:['strategy','creative'],
+  },
+  {
+    id:'note-analyzer', name:'note Analyzer',
+    layer:'understanding', status:'live',
+    url:'https://yutate.github.io/note-analyzer/',
+    purpose:'Analyzes note.com RSS feed — theme evolution, stylistic patterns, and content worldview.',
+    humanRole:'Interpret what the patterns mean for brand voice and content strategy.',
+    aiRole:'Extract topic clusters, stylistic shifts, and thematic arcs across published content.',
+    upstream:[], downstream:['strategy'],
+  },
+
+  // ── Strategy ──
+  {
+    id:'ad-strategy-studio', name:'Ad Strategy Studio',
+    layer:'strategy', status:'live',
+    url:'https://yutate.github.io/ad-strategy-studio/',
+    purpose:'Strategic scenario generation and trade-off analysis across marketing objectives.',
+    humanRole:'Final strategic judgment — which scenario fits the brand context and risk appetite.',
+    aiRole:'Scenario simulation, option generation, and trade-off surfacing at scale.',
+    upstream:['understanding'], downstream:['allocation'],
+  },
+  {
+    id:'think-drill', name:'Think Drill',
+    layer:'strategy', status:'live',
+    url:'https://yutate.github.io/tools/think-drill.html',
+    purpose:'Thought-deepening card UI — broadens or sharpens strategic questions before committing to direction.',
+    humanRole:'Choose which questions to pursue; recognize when the drill has surfaced the real issue.',
+    aiRole:'Generate divergent and convergent question cards that push thinking past surface assumptions.',
+    upstream:['understanding'], downstream:['strategy'],
+  },
+  {
+    id:'resonance-map', name:'Resonance Map',
+    layer:'strategy', status:'live',
+    url:'https://yutate.github.io/resonance-map/',
+    purpose:'Node-and-edge thought visualization — maps strategic relationships and idea resonance structures.',
+    humanRole:'Direct the mapping; identify which connections have strategic significance.',
+    aiRole:'Surface non-obvious connections between concepts; suggest relationship types and groupings.',
+    upstream:['understanding'], downstream:['allocation'],
+  },
+
+  // ── Allocation ──
+  {
+    id:'media-planner', name:'Media Planner',
+    layer:'allocation', status:'live',
+    url:'https://yutate.github.io/media-planner/media-planner.html',
+    purpose:'CV-optimized channel and budget allocation with multi-AI scenario analysis.',
+    humanRole:'Set budget constraints, approve final allocation, override on business context.',
+    aiRole:'Optimize allocation across volume, efficiency, and timing objectives simultaneously.',
+    upstream:['strategy'], downstream:['execution'],
+  },
+
+  // ── Execution ──
+  {
+    id:'adcp-execution-lab', name:'AdCP Execution Lab',
+    layer:'execution', status:'live',
+    url:'https://yutate.github.io/lab/adcp-exe/',
+    purpose:'Buyer-side agent negotiation UI — visualizes multi-agent allocation convergence and Human Decision Layer.',
+    humanRole:'Inspect negotiation logs; apply Human Decision Layer to select the final plan.',
+    aiRole:'Agent-to-agent negotiation, constraint-driven convergence, plan generation.',
+    upstream:['allocation'], downstream:['learning'],
+  },
+
+  // ── Agent Collaboration (PoC references) ──
+  {
+    id:'adcp-agent-poc', name:'AdCP Execution Lab (Agent PoC)',
+    layer:'agent', status:'experimental',
+    url:'https://yutate.github.io/lab/adcp-exe/',
+    purpose:'PoC implementation of multi-agent buyer negotiation — Seller Agents, Allocator Agent, convergence logic.',
+    humanRole:'Set negotiation constraints and apply final judgment at the Human Decision Layer.',
+    aiRole:'Multiple agents negotiate autonomously within defined constraints; surface convergence or conflict.',
+    upstream:['allocation'], downstream:['execution'],
+  },
+  {
+    id:'ad-strategy-agent-poc', name:'Ad Strategy Studio (Agent PoC)',
+    layer:'agent', status:'experimental',
+    url:'https://yutate.github.io/ad-strategy-studio/',
+    purpose:'PoC of Seller Agents embedded in strategy flow — 4 media Seller Agents + AdCP negotiation.',
+    humanRole:'Evaluate agent-proposed strategies; apply brand and business judgment to select direction.',
+    aiRole:'Seller Agents propose strategies from their media perspective; surface cross-agent trade-offs.',
+    upstream:['strategy'], downstream:['allocation'],
+  },
+
+  // ── Planned ──
+  {
+    id:'performance-learning', name:'Performance Learning Loop',
+    layer:'learning', status:'planned', url:null,
+    purpose:'Continuous ingestion of campaign performance to update upstream recommendations.',
+    humanRole:'Curate which signals generalize; prevent model overfitting to recent data.',
+    aiRole:'Pattern recognition across performance history; upstream signal routing.',
+    upstream:['execution'], downstream:['strategy','allocation'],
+  },
+  {
+    id:'brand-memory', name:'Brand Memory Store',
+    layer:'memory', status:'planned', url:null,
+    purpose:'Persistent brand, audience, and decision context across all OS sessions.',
+    humanRole:'Curate long-term memory; decide what to retain, reset, or deprecate.',
+    aiRole:'Maintain structured context; surface relevant history at decision moments.',
+    upstream:['learning'], downstream:['understanding','strategy'],
+  },
+  {
+    id:'copy-generation', name:'Copy Generation',
+    layer:'creative', status:'planned', url:null,
+    purpose:'AI-driven narrative and copy generation adaptive to audience and strategic frame.',
+    humanRole:'Creative direction, cultural judgment, and final editorial approval.',
+    aiRole:'Generate, variant-test, and score copy concepts across audience segments.',
+    upstream:['strategy','understanding'], downstream:['execution'],
+  },
+];
+
+// ══════════════════════════════════════════════════
+//  LAYER NODES
+// ══════════════════════════════════════════════════
+const NODES = [
+  {
+    id:'center', type:'center', icon:'◎', label:'Customer\nContext', status:'live',
+    description:'The origin point of every OS decision — intent, motivation, behavior, and context in real time.',
+    relatedToolIds:[],
+    signals:['Intent signal detected','Context initialized','Behavioral state updated'],
+    whyItMatters:'Marketing decisions made without grounding in real customer context are structurally unreliable. This is where the OS anchors.',
+    whatItChanges:'Shifts the starting point from internal KPIs to external human signals — decisions become context-responsive, not plan-driven.',
+    humanRole:'Define what context signals matter. Interpret ambiguous intent that data alone cannot resolve.',
+    aiRole:'Continuously ingest, normalize, and surface behavioral signals at a scale no human team can match.',
+  },
+  // Intelligence/Research — special node (type:'intelligence')
+  {
+    id:'intelligence', type:'intelligence', icon:'◉', label:'Intelligence\nResearch',
+    status:'live',
+    description:'External data feed into the OS — market signals, generational trends, and daily intelligence that inform all downstream layers.',
+    relatedToolIds:['atlas-dashboard','genz-signal-personal','genz-signal-team'],
+    signals:['Market signal ingested','Trend detected','Intelligence pushed to Understanding'],
+    whyItMatters:'The OS is only as good as its inputs. Without structured intelligence feeding the system, understanding collapses into assumption.',
+    whatItChanges:'Creates a dedicated intelligence layer that continuously updates the OS — not a one-time research phase, but an ongoing feed.',
+    humanRole:'Define what signals matter. Write the essays and analysis that give raw data its strategic meaning.',
+    aiRole:'Aggregate, structure, and surface patterns from large data sets that would be impossible to process manually.',
+  },
+  {
+    id:'understanding', type:'understanding', icon:'⟁', label:'Understanding', status:'live',
+    description:'Detects audience intent, motivation, and behavioral state. Translates raw signals into actionable intelligence.',
+    relatedToolIds:['customer-design','persona-talk','note-analyzer'],
+    signals:['Intent detected','Segment matched','Motivation inferred'],
+    whyItMatters:'Acting on data without understanding what it means produces noise. This layer gives meaning to signals.',
+    whatItChanges:'Replaces assumption-based segmentation with real-time behavioral intelligence — the audience is never static.',
+    humanRole:'Validate AI interpretations against business and cultural knowledge. Flag signals that require human judgment.',
+    aiRole:'Pattern-match across large datasets, identify intent clusters, and surface non-obvious behavioral correlations.',
+  },
+  {
+    id:'strategy', type:'strategy', icon:'◈', label:'Strategy', status:'live',
+    description:'Turns understanding into strategic options, scenarios, and trade-offs. Structures decisions for human judgment.',
+    relatedToolIds:['ad-strategy-studio','think-drill','resonance-map'],
+    signals:['Strategy generated','Scenario evaluated','Trade-off surfaced'],
+    whyItMatters:'Strategy without systematic scenario evaluation relies on the loudest voice in the room — not the best reasoning.',
+    whatItChanges:'Externalizes strategic logic so it can be examined, challenged, and improved — not just executed.',
+    humanRole:'Choose between scenarios. Apply brand values, risk tolerance, and organizational context that AI cannot infer.',
+    aiRole:'Generate multiple strategic paths, model consequences, and surface the trade-offs hidden in each option.',
+  },
+  {
+    id:'allocation', type:'allocation', icon:'▦', label:'Allocation', status:'live',
+    description:'Recommends channel, budget, and priority allocation optimized for business objectives.',
+    relatedToolIds:['media-planner'],
+    signals:['Budget allocated','Channel weighted','CV optimized'],
+    whyItMatters:'Resource allocation is the moment strategy becomes real. Mis-allocation silently erodes impact regardless of how good the strategy is.',
+    whatItChanges:'Moves allocation from historical habit and gut feel to evidence-based optimization with explicit reasoning.',
+    humanRole:'Set constraints, approval thresholds, and override when business context overrides model recommendations.',
+    aiRole:'Optimize allocation across objectives simultaneously — volume, efficiency, brand, and timing.',
+  },
+  {
+    id:'creative', type:'creative', icon:'✦', label:'Creative\nIntelligence', status:'planned',
+    description:'Generates and evaluates narratives, copy, and creative direction — adaptive to audience context and strategic frame.',
+    relatedToolIds:['copy-generation'],
+    signals:['Narrative drafted','Creative adapted','Concept scored'],
+    whyItMatters:'Creative is not separate from strategy — it is the moment strategy meets human perception.',
+    whatItChanges:'Closes the loop between strategic intent and creative output — what the brand says becomes a function of what the audience needs.',
+    humanRole:'Direct creative vision, evaluate cultural resonance, and make final judgment on what deserves to exist.',
+    aiRole:'Generate, variant-test, and score creative concepts at scale.',
+  },
+  {
+    id:'execution', type:'execution', icon:'⟳', label:'Execution', status:'live',
+    description:'Transforms strategy into campaign outputs, agent negotiations, and operational actions across channels.',
+    relatedToolIds:['adcp-execution-lab'],
+    signals:['Plan deployed','Agent negotiated','Output generated'],
+    whyItMatters:'Execution is where strategy either survives or dies. Fragmented execution tools break the chain of intent.',
+    whatItChanges:'Makes the journey from decision to live campaign seamless — no context lost, no intent diluted in handoff.',
+    humanRole:'Approve final outputs, maintain oversight of automated decisions, and intervene when edge cases arise.',
+    aiRole:'Coordinate cross-channel execution, negotiate placements via agent systems, and maintain consistency at scale.',
+  },
+  {
+    id:'learning', type:'learning', icon:'∿', label:'Learning', status:'planned',
+    description:'Learns from performance, creative feedback, and real-world response — continuously improving upstream decisions.',
+    relatedToolIds:['performance-learning'],
+    signals:['Performance ingested','Model updated','Feedback routed upstream'],
+    whyItMatters:'Without a learning loop, every campaign starts from zero. The OS should compound.',
+    whatItChanges:'Converts execution history into structural intelligence — past decisions inform future strategy, not just future tactics.',
+    humanRole:'Curate which learnings generalize and which are context-specific. Prevent overfitting to recent data.',
+    aiRole:'Identify performance patterns, route relevant signals upstream, and update priors continuously.',
+  },
+  {
+    id:'memory', type:'memory', icon:'⬡', label:'Memory', status:'planned',
+    description:'Stores brand, audience, campaign, and decision context over time — enabling continuity across all layers.',
+    relatedToolIds:['brand-memory'],
+    signals:['Context stored','History recalled','Brand state synced'],
+    whyItMatters:'An OS without memory has no institutional knowledge. Every session starts blind.',
+    whatItChanges:'Creates organizational memory that outlasts team turnover — decisions, rationale, and outcomes persist.',
+    humanRole:'Curate what should be remembered long-term. Decide when to reset and when historical context misleads.',
+    aiRole:'Maintain structured context across sessions, surface relevant history at the right decision moment.',
+  },
+  {
+    id:'agent', type:'agent_collab', icon:'⌬', label:'Agent\nCollaboration', status:'experimental',
+    description:'Multiple specialized agents collaborate to simulate, negotiate, and improve marketing decisions — currently in PoC phase.',
+    relatedToolIds:['adcp-agent-poc','ad-strategy-agent-poc'],
+    signals:['Agents negotiating','Consensus reached','Decision proposed'],
+    whyItMatters:'Complex marketing decisions involve genuine tension between objectives. Single-point AI flattens this tension. Agents preserve it.',
+    whatItChanges:'Introduces structured dissent into AI decision-making — the system surfaces conflict, not just consensus.',
+    humanRole:'Set the objective hierarchy. Decide which agent\'s perspective wins when genuine conflict cannot be resolved algorithmically.',
+    aiRole:'Maintain role-specific perspectives, negotiate across objectives, surface the decision boundary where human judgment is essential.',
+  },
+];
+
+const AGENTS = [
+  { id:'a-brand',    label:'Brand\nAgent',    icon:'◉' },
+  { id:'a-media',    label:'Media\nAgent',    icon:'◎' },
+  { id:'a-creative', label:'Creative\nAgent', icon:'◈' },
+  { id:'a-analyst',  label:'Analyst\nAgent',  icon:'◇' },
+  { id:'a-strategy', label:'Strategy\nAgent', icon:'◆' },
+];
+
+const FLOW_PATHS = [
+  ['understanding','strategy'],['strategy','allocation'],
+  ['allocation','execution'],['execution','learning'],
+  ['learning','memory'],['memory','understanding'],
+];
+
+const TICKERS = [
+  'Intelligence feed active — signals routing to Understanding',
+  'Intent detected — strategy layer active',
+  'Budget allocated across channels',
+  'Strategy generated from context signals',
+  'Learning cycle initiated',
+  'Agent negotiation in progress',
+  'Memory context synced',
+  'Scenario evaluated — trade-off surfaced',
+  'Customer context updated',
+  'Allocation rebalanced on CV signal',
+  'Understanding → Strategy path activated',
+  'Execution complete — feedback routed upstream',
+];
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+const getNode = id => NODES.find(n => n.id === id);
+const getTool = id => TOOLS.find(t => t.id === id);
+const toolsForLayer = lid => TOOLS.filter(t => t.layer === lid);
+
+function toolCountLabel(lid) {
+  const tools = toolsForLayer(lid);
+  if (!tools.length) return '';
+  const live = tools.filter(t => t.status === 'live' || t.status === 'experimental').length;
+  const planned = tools.filter(t => t.status === 'planned').length;
+  if (!planned) return `${live} tool${live>1?'s':''}`;
+  if (!live)    return `${planned} planned`;
+  return `${live} live · ${planned} planned`;
+}
+
+// ══════════════════════════════════════════════════
+//  LAYOUT
+// ══════════════════════════════════════════════════
+// Orbital positions — 8 nodes (no intelligence here, it's special)
+function getOrbPos(mobile) {
+  const rx = mobile ? 0.37 : 0.40, ry = mobile ? 0.34 : 0.38;
+  // understanding(-78), strategy(-30), allocation(24), creative(78),
+  // execution(134), learning(180), memory(-148), agent(-110)
+  // Shifted understanding & agent away from dead-top to reduce crowding
+  const angles = [-78, -30, 24, 78, 134, 180, -148, -110];
+  return angles.map(a => {
+    const r = a * Math.PI / 180;
+    return [0.5 + rx*Math.cos(r), 0.5 + ry*Math.sin(r)];
+  });
+}
+
+// Intelligence node: positioned above center, between center and top edge
+function getIntelPos(mobile) {
+  return mobile ? [0.5, 0.10] : [0.5, 0.12];
+}
+
+function getAgentPos(mobile) {
+  const rx = mobile ? 0.19 : 0.21, ry = mobile ? 0.17 : 0.19;
+  return [-90,-18,54,126,198].map(a => {
+    const r = a * Math.PI / 180;
+    return [0.5 + rx*Math.cos(r), 0.5 + ry*Math.sin(r)];
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let view='current', agentsMode=false;
+let pulseTid=null, flowTid=null, tickIdx=0;
+let activeTab='function', posMap={}, orbitRaf=null;
+
+// ══════════════════════════════════════════════════
+//  RENDER MAP
+// ══════════════════════════════════════════════════
+function render() {
+  const map = document.getElementById('os-map');
+  const svg = document.getElementById('os-svg');
+  const mob = window.innerWidth < 640;
+  const orbs = NODES.filter(n => n.type !== 'center' && n.type !== 'intelligence');
+  const op   = getOrbPos(mob);
+  const ap   = getAgentPos(mob);
+
+  map.querySelectorAll('.node,.pulse-dot').forEach(el => el.remove());
+
+  posMap = { center:[0.5,0.5] };
+  orbs.forEach((n,i) => { posMap[n.id] = op[i]; });
+  AGENTS.forEach((a,i) => { posMap[a.id] = ap[i]; });
+
+  // SVG edges — center → each orbital only
+  let svgH = '';
+  orbs.forEach(n => {
+    const [x1,y1]=posMap.center, [x2,y2]=posMap[n.id];
+    const isPlanned = sc(n.status).dimInViews.includes('current');
+    svgH += `<line class="edge ${isPlanned?'f-edge':'c-edge'}" id="edge-${n.id}" data-edge="${n.id}"
+      x1="${x1*100}%" y1="${y1*100}%" x2="${x2*100}%" y2="${y2*100}%"/>`;
+  });
+
+  // Flow path edges (thinking system)
+  FLOW_PATHS.forEach(([a,b]) => {
+    const [x1,y1]=posMap[a]||[0.5,0.5], [x2,y2]=posMap[b]||[0.5,0.5];
+    svgH += `<line class="edge" id="flow-${a}-${b}"
+      x1="${x1*100}%" y1="${y1*100}%" x2="${x2*100}%" y2="${y2*100}%"
+      style="stroke:transparent;stroke-width:2"/>`;
+  });
+
+  // Agent edges
+  AGENTS.forEach(a => {
+    const [ax,ay]=posMap[a.id], [ex,ey]=posMap['agent'];
+    svgH += `<line class="edge a-edge" x1="${ax*100}%" y1="${ay*100}%" x2="${ex*100}%" y2="${ey*100}%"/>`;
+    svgH += `<line class="edge a-edge" x1="${ax*100}%" y1="${ay*100}%" x2="50%" y2="50%"/>`;
+  });
+  svg.innerHTML = svgH;
+
+  // Center node
+  makeNode(map, NODES.find(n=>n.type==='center'), [0.5,0.5], 'center');
+  // Orbit dot
+  const od = document.createElement('div');
+  od.id='orbit-dot'; od.style.cssText='position:absolute;z-index:11;pointer-events:none;';
+  map.appendChild(od);
+  cancelAnimationFrame(orbitRaf); animateOrbit();
+
+  // Orbital nodes
+  orbs.forEach((n,i) => makeNode(map, n, op[i], 'orbital'));
+
+  // Agent nodes
+  AGENTS.forEach((a,i) => {
+    const el = document.createElement('div');
+    el.className='node agent'; el.id=`node-${a.id}`;
+    el.style.cssText=`left:${ap[i][0]*100}%;top:${ap[i][1]*100}%`;
+    el.innerHTML=`<div class="node-inner">
+      <div class="node-icon">${a.icon}</div>
+      <div class="node-label">${a.label.replace('\n','<br>')}</div>
+    </div>`;
+    map.appendChild(el);
+  });
+
+  applyClass();
+}
+
+function makeNode(map, n, p, role) {
+  const cfg   = sc(n.status);
+  const count = toolCountLabel(n.id);
+  const el    = document.createElement('div');
+  el.className = `node ${role} ${cfg.nodeClass}`;
+  el.id = `node-${n.id}`;
+  el.style.cssText = `left:${p[0]*100}%;top:${p[1]*100}%`;
+
+  const rings  = role==='center' ? `<div class="center-ring"></div><div class="center-ring-2"></div>` : '';
+  const dotEl  = role!=='center'
+    ? `<div class="node-dot" style="background:${cfg.color};${cfg.dotGlow?`box-shadow:0 0 7px ${cfg.color}`:''}"></div>` : '';
+  const cntEl  = (role==='orbital' && count) ? `<div class="node-count">${count}</div>` : '';
+
+  el.innerHTML = `<div class="node-inner">
+    ${rings}
+    <div class="node-icon">${n.icon}</div>
+    <div class="node-label">${n.label.replace('\n','<br>')}</div>
+    ${cntEl}${dotEl}
+  </div>`;
+
+  if (role!=='center') el.addEventListener('click', () => pick(n.id));
+  map.appendChild(el);
+}
+
+function makeIntelNode(map, n, p) {
+  if (!n) return;
+  const count = toolCountLabel(n.id);
+  const el = document.createElement('div');
+  el.className = 'node intelligence status-live';
+  el.id = `node-${n.id}`;
+  el.style.cssText = `left:${p[0]*100}%;top:${p[1]*100}%`;
+  el.innerHTML = `<div class="node-inner">
+    <div class="node-icon">${n.icon}</div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div class="node-label">Intelligence / Research</div>
+      ${count ? `<div class="node-count">${count}</div>` : ''}
+    </div>
+    <div class="node-dot" style="top:-4px;right:-4px;background:#00c9b1;box-shadow:0 0 7px #00c9b1"></div>
+  </div>`;
+  el.addEventListener('click', () => pick(n.id));
+  map.appendChild(el);
+}
+
+function applyClass() {
+  document.getElementById('os-map').className =
+    `os-map-wrap view-${view} has-intel-banner${agentsMode?' agents-on':''}`;
+}
+
+// ── Intel Banner init ──
+function initIntelBanner() {
+  const intelNode = NODES.find(n => n.type === 'intelligence');
+  if (!intelNode) return;
+  const tools = toolsForLayer('intelligence');
+  const count = toolCountLabel('intelligence');
+
+  // Tool chips
+  const chipsEl = document.getElementById('intel-banner-tools');
+  if (chipsEl) {
+    chipsEl.innerHTML = tools.map(t =>
+      t.url
+        ? `<a class="intel-tool-chip" href="${t.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t.name}</a>`
+        : `<span class="intel-tool-chip" style="cursor:default;opacity:0.5">${t.name}</span>`
+    ).join('');
+  }
+
+  // Count
+  const countEl = document.getElementById('intel-banner-count');
+  if (countEl) countEl.textContent = count;
+}
+
+// ══════════════════════════════════════════════════
+//  ORBIT DOT
+// ══════════════════════════════════════════════════
+function animateOrbit() {
+  const dot=document.getElementById('orbit-dot'); if(!dot) return;
+  let angle=0;
+  (function step() {
+    angle += 0.38;
+    const map=document.getElementById('os-map'), cn=document.getElementById('node-center');
+    if (!cn||!map) { orbitRaf=requestAnimationFrame(step); return; }
+    const mr=map.getBoundingClientRect(), cr=cn.getBoundingClientRect();
+    const cx=cr.left+cr.width/2-mr.left, cy=cr.top+cr.height/2-mr.top;
+    const mob=window.innerWidth<640, radius=mob?44:60;
+    const r=angle*Math.PI/180;
+    dot.style.cssText=`position:absolute;z-index:11;pointer-events:none;
+      left:${cx+radius*Math.cos(r)-2.5}px;top:${cy+radius*Math.sin(r)-2.5}px;
+      width:5px;height:5px;border-radius:50%;
+      background:var(--cyan);box-shadow:0 0 8px var(--cyan);opacity:0.5;`;
+    orbitRaf=requestAnimationFrame(step);
+  })();
+}
+
+// ══════════════════════════════════════════════════
+//  THINKING FLOW
+// ══════════════════════════════════════════════════
+let flowIdx=0;
+function runThinkingFlow() {
+  clearInterval(flowTid);
+  flowTid=setInterval(() => {
+    const [a,b]=FLOW_PATHS[flowIdx%FLOW_PATHS.length];
+    const nodeA=getNode(a);
+    if (view==='current' && nodeA && sc(nodeA.status).dimInViews.includes('current')) {
+      flowIdx++; return;
+    }
+    const edgeEl=document.getElementById(`flow-${a}-${b}`);
+    if (edgeEl) { edgeEl.classList.add('flow-lit'); setTimeout(()=>edgeEl.classList.remove('flow-lit'),700); }
+    const srcEl=document.getElementById(`node-${a}`), dstEl=document.getElementById(`node-${b}`);
+    if (srcEl&&dstEl) {
+      const map=document.getElementById('os-map');
+      const mr=map.getBoundingClientRect();
+      const sr=srcEl.getBoundingClientRect(), dr=dstEl.getBoundingClientRect();
+      spawnPulse(sr.left+sr.width/2-mr.left, sr.top+sr.height/2-mr.top,
+                 dr.left+dr.width/2-mr.left, dr.top+dr.height/2-mr.top, 'c-pulse', 900);
+    }
+    flowIdx++;
+
+    // occasional intelligence → understanding pulse
+    if (flowIdx % 3 === 0) pulseIntelligence();
+  }, 1900);
+}
+
+function pulseIntelligence() {
+  // Banner is outside the map — pulse from Understanding node inward as proxy
+  const map=document.getElementById('os-map');
+  const und=document.getElementById('node-understanding');
+  const ctr=document.getElementById('node-center');
+  if(!und||!ctr||!map) return;
+  const mr=map.getBoundingClientRect();
+  const ur=und.getBoundingClientRect(), cr=ctr.getBoundingClientRect();
+  spawnPulse(ur.left+ur.width/2-mr.left, ur.top+ur.height/2-mr.top,
+             cr.left+cr.width/2-mr.left, cr.top+cr.height/2-mr.top, 'i-pulse', 900);
+}
+
+// ══════════════════════════════════════════════════
+//  PULSE ENGINE
+// ══════════════════════════════════════════════════
+function spawnPulse(x1,y1,x2,y2,cls,dur) {
+  const map=document.getElementById('os-map'); if(!map) return;
+  const dot=document.createElement('div');
+  dot.className=`pulse-dot ${cls}`; map.appendChild(dot);
+  let st=null;
+  (function step(ts) {
+    if(!st) st=ts;
+    const p=Math.min((ts-st)/dur,1), e=p<0.5?2*p*p:-1+(4-2*p)*p;
+    dot.style.left=(x1+(x2-x1)*e-3.5)+'px';
+    dot.style.top=(y1+(y2-y1)*e-3.5)+'px';
+    dot.style.opacity=p<0.08?p/0.08:p>0.80?(1-p)/0.20:1;
+    p<1?requestAnimationFrame(step):dot.remove();
+  })(performance.now());
+}
+
+function pulseToNode(targetId, isPlanned, isAgent) {
+  const map=document.getElementById('os-map');
+  const c=document.getElementById('node-center'), t=document.getElementById(`node-${targetId}`);
+  if(!c||!t||!map) return;
+  const mr=map.getBoundingClientRect(), cr=c.getBoundingClientRect(), tr=t.getBoundingClientRect();
+  const x1=cr.left+cr.width/2-mr.left, y1=cr.top+cr.height/2-mr.top;
+  const x2=tr.left+tr.width/2-mr.left, y2=tr.top+tr.height/2-mr.top;
+  spawnPulse(x1,y1,x2,y2, isAgent?'a-pulse':isPlanned?'f-pulse':'c-pulse', 1000);
+}
+
+function pulseAgentToAgent() {
+  const map=document.getElementById('os-map'); if(!map||!agentsMode) return;
+  const ai=Math.floor(Math.random()*AGENTS.length), bi=Math.floor(Math.random()*AGENTS.length);
+  if(ai===bi) return;
+  const a=document.getElementById(`node-${AGENTS[ai].id}`), b=document.getElementById(`node-${AGENTS[bi].id}`);
+  if(!a||!b) return;
+  const mr=map.getBoundingClientRect(), ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+  spawnPulse(ar.left+ar.width/2-mr.left, ar.top+ar.height/2-mr.top,
+             br.left+br.width/2-mr.left, br.top+br.height/2-mr.top, 'a-pulse', 1200);
+}
+
+function startAutoPulse() {
+  clearInterval(pulseTid);
+  const orbs=NODES.filter(n=>n.type!=='center'&&n.type!=='intelligence');
+  let pi=0;
+  pulseTid=setInterval(() => {
+    const n=orbs[pi%orbs.length];
+    const isPlanned=sc(n.status).dimInViews.includes('current');
+    if(view==='future'||!isPlanned) pulseToNode(n.id, isPlanned, false);
+    pi++;
+    if(agentsMode) { pulseToNode(AGENTS[pi%AGENTS.length].id,false,true); setTimeout(pulseAgentToAgent,600); }
+  }, 1700);
+}
+
+// ══════════════════════════════════════════════════
+//  NODE SELECTION — pick()
+// ══════════════════════════════════════════════════
+function pick(id) {
+  const node=getNode(id); if(!node) return;
+  const cfg=sc(node.status);
+  const isPlanned=cfg.dimInViews.includes('current');
+  const isIntel=(node.type==='intelligence');
+
+  // Update map node active states (orbitals only)
+  document.querySelectorAll('.node.orbital').forEach(el=>el.classList.remove('active'));
+  if (!isIntel) document.getElementById(`node-${id}`)?.classList.add('active');
+
+  // Intel banner active state
+  document.getElementById('intel-banner')?.classList.toggle('active', isIntel);
+
+  document.querySelectorAll('.edge[data-edge]').forEach(e=>
+    e.classList.toggle('active', e.dataset.edge===id));
+
+  const panel=document.getElementById('os-detail');
+  panel.className=`os-detail active${isPlanned?' is-planned':''}${isIntel?' is-intelligence':''}`;
+
+  const layerTools=[...new Map(
+    [...toolsForLayer(id), ...node.relatedToolIds.map(getTool).filter(Boolean)].map(t=>[t.id,t])
+  ).values()];
+
+  const sigHTML=node.signals.map(s=>`<div class="signal-item">${s}</div>`).join('');
+  const titleExtra=isPlanned?' is-planned':isIntel?' is-intelligence':'';
+
+  panel.innerHTML=`
+    <div class="detail-tabs">
+      <button class="dtab ${activeTab==='function'?'active':''}"   onclick="switchTab('function')">Function</button>
+      <button class="dtab ${activeTab==='ospos'?'active':''}"      onclick="switchTab('ospos')">OS Position</button>
+      <button class="dtab ${activeTab==='philosophy'?'active':''}" onclick="switchTab('philosophy')">Why This Layer</button>
+    </div>
+
+    <div class="detail-pane ${activeTab==='function'?'active':''}" id="pane-function">
+      <div class="detail-body">
+        <div class="detail-main">
+          <div class="detail-top">
+            <div class="detail-title${titleExtra}">${node.label.replace('\n',' ')}</div>
+            <div class="detail-badge" style="border-color:${cfg.color}44;color:${cfg.color};background:${cfg.color}13">
+              ${cfg.label}
+            </div>
+          </div>
+          <div class="detail-desc">${node.description}</div>
+          ${layerTools.length?`
+            <div class="detail-tools-label">Tools in this Layer</div>
+            <div class="detail-tools">${layerTools.map(t=>renderToolRow(t)).join('')}</div>
+          `:''}
+        </div>
+        <div class="detail-signals">
+          <div class="signals-label">Live Signals</div>
+          ${sigHTML}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-pane ${activeTab==='ospos'?'active':''}" id="pane-ospos">
+      <div class="ospos-wrap">
+        <div class="ospos-title">OS Architecture — Layer Position</div>
+        ${renderArchChain(id)}
+        ${layerTools.length?`
+          <div class="detail-tools-label" style="margin-bottom:10px">Tools active in this layer</div>
+          <div class="ospos-tools">${layerTools.map(t=>renderOsPosTool(t)).join('')}</div>
+        `:'<p style="font-size:12px;color:var(--text-dim);padding-top:8px">No tools registered yet in this layer.</p>'}
+      </div>
+    </div>
+
+    <div class="detail-pane ${activeTab==='philosophy'?'active':''}" id="pane-philosophy">
+      <div class="phil-grid">
+        <div class="phil-cell">
+          <div class="phil-cell-label why-label"><span class="pill-icon">◈</span>Why This Matters</div>
+          <div class="phil-cell-text">${node.whyItMatters}</div>
+        </div>
+        <div class="phil-cell">
+          <div class="phil-cell-label change-label"><span class="pill-icon">⟳</span>What This Changes</div>
+          <div class="phil-cell-text">${node.whatItChanges}</div>
+        </div>
+        <div class="phil-cell">
+          <div class="phil-cell-label human-label"><span class="pill-icon">◎</span>Human Role</div>
+          <div class="phil-cell-text">${node.humanRole}</div>
+        </div>
+        <div class="phil-cell">
+          <div class="phil-cell-label ai-label"><span class="pill-icon">⌬</span>AI Role</div>
+          <div class="phil-cell-text">${node.aiRole}</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Signal cycling
+  clearInterval(window._si); let si=0;
+  const items=panel.querySelectorAll('.signal-item');
+  if(items.length){
+    items[0].classList.add('firing');
+    window._si=setInterval(()=>{
+      items.forEach(i=>i.classList.remove('firing'));
+      items[si%items.length].classList.add('firing'); si++;
+    },980);
+  }
+
+  if (!isIntel) pulseToNode(id, isPlanned, false);
+}
+
+// ── Tool row (Function pane) ──
+function renderToolRow(tool) {
+  const tc=sc(tool.status);
+  const upNames  = tool.upstream.map(id=>(getNode(id)||{label:id}).label.replace('\n',' ')).join(', ');
+  const dnNames  = tool.downstream.map(id=>(getNode(id)||{label:id}).label.replace('\n',' ')).join(', ');
+  const flowHTML = `<div class="tool-flow">
+    ${upNames?`<span class="flow-node-chip upstream">${upNames}</span><span class="flow-arrow">→</span>`:''}
+    <span class="flow-node-chip current-layer">${tool.name}</span>
+    ${dnNames?`<span class="flow-arrow">→</span><span class="flow-node-chip downstream">${dnNames}</span>`:''}
+  </div>`;
+  const linkHTML = tool.url
+    ? `<a class="tool-row-link" href="${tool.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Open</a>` : '';
+
+  return `<div class="tool-row" id="toolrow-${tool.id}">
+    <div class="tool-row-header" onclick="toggleToolRow('${tool.id}')">
+      <span class="tool-row-icon">▶</span>
+      <span class="tool-row-name">${tool.name}</span>
+      <span class="tool-row-status" style="border-color:${tc.color}44;color:${tc.color};background:${tc.color}11">${tc.label}</span>
+      ${linkHTML}
+    </div>
+    <div class="tool-detail-expand">
+      ${flowHTML}
+      <div class="tool-purpose">${tool.purpose}</div>
+      <div class="tool-role-grid">
+        <div class="tool-role-cell">
+          <div class="tool-role-label human">◎ Human Role</div>
+          <div class="tool-role-text">${tool.humanRole}</div>
+        </div>
+        <div class="tool-role-cell">
+          <div class="tool-role-label ai">⌬ AI Role</div>
+          <div class="tool-role-text">${tool.aiRole}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleToolRow(id) {
+  document.getElementById(`toolrow-${id}`)?.classList.toggle('expanded');
+}
+
+// ── Architecture chain (OS Position pane) ──
+function renderArchChain(activeId) {
+  const chain = ['intelligence','understanding','strategy','allocation','execution','learning','memory'];
+  return `<div class="arch-chain">` +
+    chain.map((lid,i) => {
+      const n=getNode(lid); if(!n) return '';
+      const label=n.label.replace('\n',' ');
+      const isIntel=(lid==='intelligence');
+      let boxClass='dim';
+      if(lid===activeId)              boxClass=isIntel?'intel':'self';
+      else if(chain[i+1]===activeId) boxClass=isIntel?'intel':'upstream';
+      else if(chain[i-1]===activeId) boxClass='downstream';
+      const arrow=i<chain.length-1?`<span class="arch-arrow">→</span>`:'';
+      return `<div class="arch-node">
+        <div class="arch-node-box ${boxClass}">${label}</div>
+        <div class="arch-node-label" style="color:${boxClass==='self'||boxClass==='intel'?'var(--cyan)':'var(--text-dim)'}">
+          ${boxClass==='self'||boxClass==='intel'?'← here':''}
+        </div>
+      </div>${arrow}`;
+    }).join('') +
+  `</div>`;
+}
+
+// ── OS Position tool item ──
+function renderOsPosTool(tool) {
+  const tc=sc(tool.status);
+  const tag=tool.url?'a':'div';
+  const href=tool.url?`href="${tool.url}" target="_blank" rel="noopener"`:'';
+  const arrow=tool.url?`<span class="ospos-tool-arrow">↗</span>`:'';
+  return `<${tag} class="ospos-tool-item" ${href}>
+    <span class="ospos-tool-name">${tool.name}</span>
+    <span class="ospos-tool-purpose">${tool.purpose}</span>
+    <span class="ospos-tool-badge" style="border-color:${tc.color}44;color:${tc.color};background:${tc.color}11">${tc.label}</span>
+    ${arrow}
+  </${tag}>`;
+}
+
+// ── Tab switch ──
+function switchTab(tab) {
+  activeTab=tab;
+  const tabs=['function','ospos','philosophy'];
+  document.querySelectorAll('.dtab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===tab));
+  tabs.forEach(t=>document.getElementById(`pane-${t}`)?.classList.toggle('active',t===tab));
+}
+
+// ══════════════════════════════════════════════════
+//  TICKER
+// ══════════════════════════════════════════════════
+function startTicker() {
+  const el=document.getElementById('ticker-text');
+  setInterval(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>{ tickIdx=(tickIdx+1)%TICKERS.length; el.textContent=TICKERS[tickIdx]; el.classList.add('show'); },480);
+  },3600);
+}
+
+// ══════════════════════════════════════════════════
+//  VIEW CONTROLS
+// ══════════════════════════════════════════════════
+function injectViewButtons() {
+  const controls=document.getElementById('os-controls');
+  const sep=controls.querySelector('.ctrl-sep');
+  VIEW_MODES.forEach(mode=>{
+    const btn=document.createElement('button');
+    btn.className=`ctrl-btn${mode.id===view?' active':''}`;
+    btn.id=`btn-${mode.id}`; btn.textContent=mode.label;
+    btn.onclick=()=>setView(mode.id);
+    controls.insertBefore(btn,sep);
+  });
+}
+
+function setView(v) {
+  view=v;
+  VIEW_MODES.forEach(m=>document.getElementById(`btn-${m.id}`)?.classList.toggle('active',m.id===v));
+  applyClass();
+}
+
+function toggleAgents() {
+  agentsMode=!agentsMode;
+  document.getElementById('btn-agents').classList.toggle('active',agentsMode);
+  applyClass();
+}
+
+// ══════════════════════════════════════════════════
+//  LEGEND
+// ══════════════════════════════════════════════════
+function renderLegend() {
+  const leg=document.getElementById('os-legend');
+  const items=[
+    { line:'solid',   color:'rgba(0,229,255,0.45)',   label:'Live' },
+    { line:'dashed',  color:'rgba(157,130,245,0.5)',  label:'Planned' },
+    { dot:true,       color:'#00c9b1',                label:'Intelligence Feed' },
+    { dot:true,       color:'#2ecc89',                label:'Experimental' },
+    { dot:true,       color:'#2ecc89', agent:true,    label:'Agent Layer' },
+  ];
+  leg.innerHTML=[
+    `<div class="legend-item"><div class="legend-line" style="background:rgba(0,229,255,0.45)"></div>Live</div>`,
+    `<div class="legend-item"><div class="legend-line" style="background:repeating-linear-gradient(90deg,rgba(157,130,245,0.5) 0,rgba(157,130,245,0.5) 4px,transparent 4px,transparent 8px)"></div>Planned</div>`,
+    `<div class="legend-item"><div class="legend-dot" style="background:#00c9b1;box-shadow:0 0 5px #00c9b1"></div>Intelligence</div>`,
+    `<div class="legend-item"><div class="legend-dot" style="background:#2ecc89;box-shadow:0 0 5px #2ecc89"></div>Experimental</div>`,
+    `<div class="legend-item"><div class="legend-dot" style="background:#2ecc89;box-shadow:0 0 5px #2ecc89"></div>Agent Layer</div>`,
+  ].join('');
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  injectViewButtons();
+  renderLegend();
+  initIntelBanner();
+  render();
+  startAutoPulse();
+  runThinkingFlow();
+  startTicker();
+});
+
+window.addEventListener('resize', () => {
+  clearInterval(pulseTid); clearInterval(flowTid); cancelAnimationFrame(orbitRaf);
+  render(); startAutoPulse(); runThinkingFlow();
+});
+</script>
+</body>
+</html>
