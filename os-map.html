@@ -671,6 +671,15 @@ const TOOLS = [
 
   // ── Strategy ──
   {
+    id:'north-star-studio', name:'North Star Studio',
+    layer:'strategy', status:'live',
+    url:'https://yutate.github.io/north-star/',
+    purpose:'Generates strategic "success definitions" from conversation — surfaces 3 North Star candidates with PDF/JSON export.',
+    humanRole:'Articulate the challenge in natural language; select which North Star aligns with business intent.',
+    aiRole:'Interpret problem framing, generate multiple strategic success definitions, and structure outputs for alignment.',
+    upstream:['understanding'], downstream:['allocation'],
+  },
+  {
     id:'ad-strategy-studio', name:'Ad Strategy Studio',
     layer:'strategy', status:'live',
     url:'https://yutate.github.io/ad-strategy-studio/',
@@ -757,6 +766,16 @@ const TOOLS = [
     aiRole:'Maintain structured context; surface relevant history at decision moments.',
     upstream:['learning'], downstream:['understanding','strategy'],
   },
+  // ── Creative Intelligence ──
+  {
+    id:'synthetic-meaning-space', name:'Synthetic Meaning Space',
+    layer:'creative', status:'live',
+    url:'https://yutate.github.io/synthetic-meaning/',
+    purpose:'Multiple virtual Personas evaluate creative from their own perspective — Meaning Exploration, not Behavior Prediction.',
+    humanRole:'Define the creative stimulus; interpret what the divergence between persona responses reveals.',
+    aiRole:'Generate distinct persona viewpoints, surface meaning gaps, and reveal how the same creative lands differently.',
+    upstream:['understanding','strategy'], downstream:['execution'],
+  },
   {
     id:'copy-generation', name:'Copy Generation',
     layer:'creative', status:'planned', url:null,
@@ -806,7 +825,7 @@ const NODES = [
   {
     id:'strategy', type:'strategy', icon:'◈', label:'Strategy', status:'live',
     description:'Turns understanding into strategic options, scenarios, and trade-offs. Structures decisions for human judgment.',
-    relatedToolIds:['ad-strategy-studio','think-drill','resonance-map'],
+    relatedToolIds:['north-star-studio','ad-strategy-studio','think-drill','resonance-map'],
     signals:['Strategy generated','Scenario evaluated','Trade-off surfaced'],
     whyItMatters:'Strategy without systematic scenario evaluation relies on the loudest voice in the room — not the best reasoning.',
     whatItChanges:'Externalizes strategic logic so it can be examined, challenged, and improved — not just executed.',
@@ -824,10 +843,10 @@ const NODES = [
     aiRole:'Optimize allocation across objectives simultaneously — volume, efficiency, brand, and timing.',
   },
   {
-    id:'creative', type:'creative', icon:'✦', label:'Creative\nIntelligence', status:'planned',
-    description:'Generates and evaluates narratives, copy, and creative direction — adaptive to audience context and strategic frame.',
-    relatedToolIds:['copy-generation'],
-    signals:['Narrative drafted','Creative adapted','Concept scored'],
+    id:'creative', type:'creative', icon:'✦', label:'Creative\nIntelligence', status:'live',
+    description:'Evaluates and explores how creative lands across different audience perspectives — adaptive to audience context and strategic frame.',
+    relatedToolIds:['synthetic-meaning-space','copy-generation'],
+    signals:['Meaning explored','Persona response diverged','Creative evaluated'],
     whyItMatters:'Creative is not separate from strategy — it is the moment strategy meets human perception.',
     whatItChanges:'Closes the loop between strategic intent and creative output — what the brand says becomes a function of what the audience needs.',
     humanRole:'Direct creative vision, evaluate cultural resonance, and make final judgment on what deserves to exist.',
