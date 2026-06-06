@@ -731,6 +731,15 @@ const TOOLS = [
 
   // ── Agent Collaboration (PoC references) ──
   {
+    id:'decision-lab', name:'Decision Lab',
+    layer:['strategy','agent'], status:'experimental',
+    url:'https://yutate.github.io/decision-lab/',
+    purpose:'Meeting Design Engine — AI designs meeting participants (Agents) from a decision theme, simulates conflict, and routes to Human Decision Layer.',
+    humanRole:'Input the decision theme; interpret the Conflict Map; make the final call at the Human Decision Layer.',
+    aiRole:'Design agent roles, simulate position conflicts, generate a Conflict Map and trade-off explanation, propose decision options.',
+    upstream:['strategy'], downstream:['execution'],
+  },
+  {
     id:'adcp-agent-poc', name:'AdCP Execution Lab (Agent PoC)',
     layer:'agent', status:'experimental',
     url:'https://yutate.github.io/lab/adcp-exe/',
@@ -825,7 +834,7 @@ const NODES = [
   {
     id:'strategy', type:'strategy', icon:'◈', label:'Strategy', status:'live',
     description:'Turns understanding into strategic options, scenarios, and trade-offs. Structures decisions for human judgment.',
-    relatedToolIds:['north-star-studio','ad-strategy-studio','think-drill','resonance-map'],
+    relatedToolIds:['north-star-studio','ad-strategy-studio','think-drill','resonance-map','decision-lab'],
     signals:['Strategy generated','Scenario evaluated','Trade-off surfaced'],
     whyItMatters:'Strategy without systematic scenario evaluation relies on the loudest voice in the room — not the best reasoning.',
     whatItChanges:'Externalizes strategic logic so it can be examined, challenged, and improved — not just executed.',
@@ -885,7 +894,7 @@ const NODES = [
   {
     id:'agent', type:'agent_collab', icon:'⌬', label:'Agent\nCollaboration', status:'experimental',
     description:'Multiple specialized agents collaborate to simulate, negotiate, and improve marketing decisions — currently in PoC phase.',
-    relatedToolIds:['adcp-agent-poc','ad-strategy-agent-poc'],
+    relatedToolIds:['decision-lab','adcp-agent-poc','ad-strategy-agent-poc'],
     signals:['Agents negotiating','Consensus reached','Decision proposed'],
     whyItMatters:'Complex marketing decisions involve genuine tension between objectives. Single-point AI flattens this tension. Agents preserve it.',
     whatItChanges:'Introduces structured dissent into AI decision-making — the system surfaces conflict, not just consensus.',
@@ -928,7 +937,9 @@ const TICKERS = [
 // ══════════════════════════════════════════════════
 const getNode = id => NODES.find(n => n.id === id);
 const getTool = id => TOOLS.find(t => t.id === id);
-const toolsForLayer = lid => TOOLS.filter(t => t.layer === lid);
+const toolsForLayer = lid => TOOLS.filter(t =>
+  Array.isArray(t.layer) ? t.layer.includes(lid) : t.layer === lid
+);
 
 function toolCountLabel(lid) {
   const tools = toolsForLayer(lid);
