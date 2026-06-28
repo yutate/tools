@@ -1,0 +1,313 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Yuta Terachi — Marketing Science Tools",
+    "identifier": "did:web:yutate.github.io"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:yutate.github.io:agent:atlas-dashboard",
+      "displayName": "ATLAS Dashboard",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/Atlas/",
+      "capabilities": [
+        "DailyNewsAnalysis",
+        "MarketingTrendTracking",
+        "ArticleAggregation",
+        "PersonalIntelligence"
+      ],
+      "description": "A personal intelligence dashboard that visualizes and searches daily ATLAS logs co-created with ChatGPT. Auto-updates when atlas.json is pushed to GitHub. Tracks daily signals across Marketing, AI, and business categories.",
+      "representativeQueries": [
+        "what are today's marketing news highlights",
+        "track daily AI and marketing industry signals",
+        "find recent articles about digital advertising trends",
+        "show me today's business intelligence summary"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:note-analyzer",
+      "displayName": "note Analyzer",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/note-analyzer/",
+      "capabilities": [
+        "BlogAnalysis",
+        "WritingStyleAnalysis",
+        "ThemeTracking",
+        "RSSParsing"
+      ],
+      "description": "Analyzes note.com RSS feeds to reveal writing style, theme evolution, and worldview with AI. Supports whole-blog and single-article tab views. Multi-AI support: Claude, GPT-4o, Gemini.",
+      "representativeQueries": [
+        "analyze the writing style of a note.com blog",
+        "track how themes have changed across blog posts",
+        "summarize the worldview of a note author",
+        "compare recent articles on note.com"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:think-drill",
+      "displayName": "Think Drill",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/tools/think-drill.html",
+      "capabilities": [
+        "ThoughtExploration",
+        "QuestionGeneration",
+        "IdeaDrilling",
+        "MindExpansion"
+      ],
+      "description": "A thought exploration tool where AI generates question cards from any input. Each card selection deepens the thinking. Two modes: expand (広げる) and narrow (絞る). Multi-AI support.",
+      "representativeQueries": [
+        "help me think deeper about a problem",
+        "generate questions to explore an idea",
+        "drill down into a strategic question",
+        "expand my thinking on a topic"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:json-synthesis",
+      "displayName": "JSON Synthesis",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/tools/json-synthesis.html",
+      "capabilities": [
+        "JSONMerge",
+        "JSONSynthesis",
+        "DataCombination"
+      ],
+      "description": "A tool for synthesizing and merging multiple JSON files with AI. Supports Claude, Gemini, and GPT-4o.",
+      "representativeQueries": [
+        "merge multiple JSON files into one",
+        "synthesize JSON data from different sources",
+        "combine and reconcile JSON structures with AI"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:genz-signal-dashboard",
+      "displayName": "Z世代 Signal Dashboard",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/genz/",
+      "capabilities": [
+        "GenZTrendAnalysis",
+        "WeeklySignalTracking",
+        "KeywordExtraction",
+        "EssayInsights"
+      ],
+      "description": "A Gen Z trend tracking dashboard with 33+ weeks of weekly signal data, 1,100+ articles, and keyword analysis. Tracks emerging Gen Z behaviors, values, and cultural signals for marketing strategy in Japan.",
+      "representativeQueries": [
+        "what are the latest Gen Z trends in Japan",
+        "analyze Gen Z consumer behavior signals",
+        "find Gen Z keywords for marketing campaigns",
+        "track weekly youth culture signals in Japan"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:genz-signal-team",
+      "displayName": "Z世代 Signal Dashboard — Team View",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/genz/team/",
+      "capabilities": [
+        "GenZTrendAnalysis",
+        "TeamDashboard",
+        "SharedInsights",
+        "KeywordTracking"
+      ],
+      "description": "Team-optimized view of the Gen Z Signal Dashboard. Same data as personal view with a layout designed for team sharing and presentations within GMSD at Rakuten.",
+      "representativeQueries": [
+        "show team-facing Gen Z trend summary",
+        "get Gen Z insights for a marketing team",
+        "share weekly youth culture signals with the team"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:persona-talk",
+      "displayName": "Persona Talk",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/genz/persona.html",
+      "capabilities": [
+        "PersonaSimulation",
+        "GenZPersonaDialogue",
+        "ConsumerInsight",
+        "AIConversation"
+      ],
+      "description": "A conversational tool for dialoguing with AI-generated Gen Z personas. Select a character from the persona library and experience realistic conversations with multi-AI support to gain consumer insights.",
+      "representativeQueries": [
+        "talk to a Gen Z persona to understand their mindset",
+        "simulate a conversation with a young Japanese consumer",
+        "get Gen Z perspective on a product or campaign",
+        "interview an AI persona for consumer research"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:ad-strategy-studio",
+      "displayName": "Ad Strategy Studio",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/ad-strategy-studio/",
+      "capabilities": [
+        "IntentAnalysis",
+        "StrategySimulation",
+        "AllocatorAgent",
+        "ScenarioComparison",
+        "MediaPlanGeneration"
+      ],
+      "description": "A decision-first ad strategy tool. Analyzes campaign intent (comparison/learning/transaction/impulse), runs a multi-agent AdCP simulation across 4 media channels (TikTok, YouTube, Google, Meta), selects a scenario, and generates a numeric media plan. JS-calculated budget numbers, AI-generated rationale.",
+      "representativeQueries": [
+        "what media channels should I allocate my ad budget to",
+        "compare ad strategy scenarios for a campaign",
+        "analyze campaign intent and recommend media allocation",
+        "generate a media plan from a campaign brief"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:adcp-execution-lab",
+      "displayName": "AdCP Execution Lab",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/lab/adcp-exe/",
+      "capabilities": [
+        "SellerAgentNegotiation",
+        "BudgetAllocationConvergence",
+        "HumanDecisionLayer",
+        "StrategyTransferJSON"
+      ],
+      "description": "A PoC implementation of AdCP (Ad Context Protocol) Buyer Agent UI. Visualizes multi-round negotiation between Seller Agents, allocation convergence logic, and Human Decision Layer. Outputs Strategy Transfer JSON for downstream tools.",
+      "representativeQueries": [
+        "simulate ad buying negotiation between media seller agents",
+        "visualize budget allocation convergence across media channels",
+        "run AdCP buyer agent simulation"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:media-planner",
+      "displayName": "Media Planner",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/media-planner/",
+      "capabilities": [
+        "BudgetAllocation",
+        "CPAOptimization",
+        "CVSimulation",
+        "GoogleAdsAutoBuilder",
+        "AdCPBriefGeneration",
+        "IntentAnalysis"
+      ],
+      "description": "A data-driven benchmark media planning tool. Optimizes ad budget allocation based on past CPA performance. Includes Google Ads RSA campaign auto-builder, AdCP Brief export, Intent Strength/Type analysis, and CSV import. Multi-AI: Claude, Gemini, GPT-4o.",
+      "representativeQueries": [
+        "optimize ad budget allocation based on past CPA data",
+        "build a Google search ads RSA campaign structure",
+        "calculate expected conversions from media budget",
+        "generate a benchmark media plan for a campaign"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:customer-design",
+      "displayName": "ズレない顧客設計",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/customer-design/",
+      "capabilities": [
+        "CustomerDesign",
+        "ConversationalAI",
+        "StrategyAlignment",
+        "MarketingThinking"
+      ],
+      "description": "A customer strategy design tool with a strict 3-4 turn conversation flow and 4 AI modes (normal / expand / narrow / Yuta). Designed not as an analysis tool but as a device to move thinking forward. Powered by Gemini API.",
+      "representativeQueries": [
+        "design a customer strategy for a product",
+        "clarify target customer definition",
+        "think through customer segmentation",
+        "challenge assumptions about our target audience"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:resonance-map",
+      "displayName": "Resonance Map",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/resonance-map/",
+      "capabilities": [
+        "MindMapping",
+        "IdeaVisualization",
+        "ThoughtStructuring",
+        "ConceptMapping"
+      ],
+      "description": "A mind mapping tool that visualizes thoughts as nodes and edges. Interactively explores relationships and resonance structures between ideas. Supports Think Drill JSON import.",
+      "representativeQueries": [
+        "visualize relationships between ideas",
+        "create a mind map for a strategy",
+        "explore concept connections interactively",
+        "map out the structure of a complex topic"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:yuta-user-manual",
+      "displayName": "Yuta User Manual",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/Yuta-User-manual/",
+      "capabilities": [
+        "PersonalManual",
+        "TeamOnboarding",
+        "Quiz",
+        "CertificationTest"
+      ],
+      "description": "A 3-AI integrated personal user manual for team members. Includes back manual for subordinates, quiz, and 3-level certification test. Built with pure HTML+JS, fully compatible with iPhone Safari.",
+      "representativeQueries": [
+        "how does Yuta Terachi work and think",
+        "onboard a new team member to Yuta's working style",
+        "test knowledge of Yuta's management philosophy",
+        "understand how to collaborate with the GMSD head"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:north-star-studio",
+      "displayName": "North Star Studio",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/north-star/",
+      "capabilities": [
+        "StrategyAlignment",
+        "NorthStarDefinition",
+        "MultiAIComparison",
+        "SuccessVisionGeneration"
+      ],
+      "description": "A strategic alignment tool that generates a 'North Star' success definition from free-text input. Uses three AI models (Claude Sonnet, Gemini 2.5 Flash, GPT-4o) in parallel to produce a Strategic Contradiction, Desired Relationship State, and Relationship Futures. Outputs PDF with Japanese font support.",
+      "representativeQueries": [
+        "define a north star vision for a business strategy",
+        "align a team around a shared success definition",
+        "generate strategic direction from ambiguous goals",
+        "clarify what success looks like for a campaign or project"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:synthetic-meaning-space",
+      "displayName": "Synthetic Meaning Space",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/synthetic-meaning/",
+      "capabilities": [
+        "PersonaGeneration",
+        "AdCreativeAnalysis",
+        "SyntheticPersona",
+        "AttentionDecayAnalysis"
+      ],
+      "description": "A multi-AI creative diagnostic tool using synthetic personas to analyze ad creatives. Generates personas from statistical data, document paste, or manual form. Includes Attention Decay Graph and export in HTML/PDF/JSON. Deep crimson × gold aesthetic.",
+      "representativeQueries": [
+        "analyze an ad creative through synthetic consumer personas",
+        "generate consumer personas from demographic data",
+        "evaluate ad creative resonance across different audience types",
+        "diagnose creative effectiveness with AI personas"
+      ]
+    },
+    {
+      "identifier": "urn:air:yutate.github.io:agent:decision-lab",
+      "displayName": "Decision Lab",
+      "type": "application/openapi+json",
+      "url": "https://yutate.github.io/decision-lab/",
+      "capabilities": [
+        "MultiAgentDebate",
+        "ConflictMapping",
+        "StrategicDecisionSupport",
+        "MeetingMinutesGeneration",
+        "PDFExport"
+      ],
+      "description": "A strategic decision-support tool where Claude-generated agents tailored to any theme run a 4-step sequence: generateAgents → generateConflicts → generateOptions → generateDebate. Features Conflict Map, Human Decision Layer, Meeting Minutes with agent stances, and PDF/JSON export.",
+      "representativeQueries": [
+        "run a multi-agent debate on a strategic decision",
+        "generate conflicting perspectives on a business problem",
+        "create a structured decision framework with AI agents",
+        "simulate stakeholder debate before making a key decision"
+      ]
+    }
+  ]
+}
