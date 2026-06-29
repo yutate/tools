@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Visibility Radar β2 — AI検索対応度診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#090d14; --bg2:#0f1520; --bg3:#151e2e; --bg4:#1a2540;
+  --border:#1e2d45; --border2:#263552;
+  --cyan:#00d4ff; --cyan-dim:#0088aa; --cyan-bg:rgba(0,212,255,0.08);
+  --amber:#f59e0b; --amber-bg:rgba(245,158,11,0.08);
+  --green:#10b981; --green-bg:rgba(16,185,129,0.08);
+  --red:#ef4444; --red-bg:rgba(239,68,68,0.08);
+  --purple:#a78bfa; --purple-bg:rgba(167,139,250,0.08);
+  --text:#e2e8f0; --text-dim:#64748b; --text-mid:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;}
+
+/* HEADER */
+.header{border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(9,13,20,0.96);backdrop-filter:blur(8px);z-index:100;gap:12px;flex-wrap:wrap;}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-icon{width:28px;height:28px;border:1.5px solid var(--cyan);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;}
+.logo-icon::after{content:'';width:7px;height:7px;background:var(--cyan);border-radius:50%;}
+.logo-icon::before{content:'';position:absolute;width:18px;height:18px;border:1px solid rgba(0,212,255,0.3);border-radius:50%;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.3;}50%{transform:scale(1.4);opacity:0;}}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;letter-spacing:.05em;}
+.logo-badge{font-family:'Space Mono',monospace;font-size:9px;color:var(--cyan);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);padding:2px 6px;border-radius:3px;letter-spacing:.1em;}
+.header-keys{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.key-group{display:flex;align-items:center;gap:6px;}
+.key-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.05em;white-space:nowrap;}
+.key-input{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:4px;font-family:'Space Mono',monospace;font-size:10px;width:170px;transition:border-color .2s;}
+.key-input:focus{outline:none;border-color:var(--cyan-dim);}
+.key-saved{font-family:'Space Mono',monospace;font-size:9px;color:var(--green);opacity:0;transition:opacity .4s;}
+.key-saved.show{opacity:1;}
+
+/* MAIN */
+.main{max-width:960px;margin:0 auto;padding:40px 20px 80px;}
+
+/* HERO */
+.hero{text-align:center;margin-bottom:40px;}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;}
+.hero-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(24px,4vw,36px);font-weight:700;line-height:1.2;margin-bottom:12px;}
+.hero-title span{color:var(--cyan);}
+.hero-sub{color:var(--text-mid);font-size:13px;max-width:500px;margin:0 auto;line-height:1.8;}
+
+/* MODE SWITCH */
+.mode-switch{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:32px;}
+.mode-btn{flex:1;background:transparent;border:none;color:var(--text-mid);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;padding:12px 20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.mode-btn.active{background:var(--bg3);color:var(--text);}
+.mode-btn:first-child{border-right:1px solid var(--border);}
+.mode-tag{font-family:'Space Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;letter-spacing:.05em;}
+.tag-est{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,0.3);}
+.tag-real{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
+
+/* SECTION */
+.form-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:16px;}
+.sec-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:var(--cyan);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field.span2{grid-column:span 2;}
+label{font-size:11px;color:var(--text-mid);letter-spacing:.02em;}
+label .req{color:var(--cyan);margin-left:2px;}
+input[type=text],input[type=url],input[type=date],textarea,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:13px;transition:border-color .2s;width:100%;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cyan-dim);background:rgba(0,212,255,0.02);}
+textarea{resize:vertical;min-height:70px;}
+::placeholder{color:var(--text-dim);}
+.hint{font-size:11px;color:var(--text-dim);margin-top:3px;}
+
+/* INDUSTRY PILLS */
+.industry-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.pill{background:var(--bg3);border:1px solid var(--border);color:var(--text-mid);font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif;}
+.pill:hover{border-color:var(--cyan-dim);color:var(--text);}
+.pill.active{background:var(--cyan-bg);border-color:var(--cyan);color:var(--cyan);}
+
+/* AI TOOL CHECKBOXES */
+.tool-check-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.tool-check{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.tool-check input[type=checkbox]{accent-color:var(--cyan);width:13px;height:13px;}
+.tool-check span{font-size:12px;color:var(--text-mid);}
+.tool-check:has(input:checked){border-color:var(--cyan-dim);background:var(--cyan-bg);}
+.tool-check:has(input:checked) span{color:var(--cyan);}
+
+/* LOG ENTRIES */
+.log-entry{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:12px;position:relative;}
+.log-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.log-entry-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:.1em;}
+.log-remove{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:11px;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .2s;}
+.log-remove:hover{border-color:var(--red);color:var(--red);}
+.log-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.log-grid .span2{grid-column:span 2;}
+.log-grid .span3{grid-column:span 3;}
+.btn-add-log{background:transparent;border:1px dashed var(--border2);color:var(--text-dim);font-size:12px;padding:10px;border-radius:4px;cursor:pointer;width:100%;transition:all .2s;font-family:'Noto Sans JP',sans-serif;}
+.btn-add-log:hover{border-color:var(--cyan-dim);color:var(--cyan);}
+
+/* PRESET QUESTIONS */
+.preset-section{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:16px;margin-top:8px;}
+.preset-title{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.1em;margin-bottom:10px;}
+.preset-list{display:flex;flex-direction:column;gap:4px;}
+.preset-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-mid);padding:4px 0;border-bottom:1px solid rgba(30,45,69,0.5);}
+.preset-item:last-child{border-bottom:none;}
+.preset-cat{font-family:'Space Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;flex-shrink:0;}
+.btn-use-preset{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:3px;cursor:pointer;margin-left:auto;flex-shrink:0;transition:all .2s;}
+.btn-use-preset:hover{border-color:var(--cyan-dim);color:var(--cyan);}
+
+/* RUN */
+.run-wrap{text-align:center;margin:28px 0;}
+.btn-run{background:transparent;border:1.5px solid var(--cyan);color:var(--cyan);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;letter-spacing:.08em;padding:13px 48px;border-radius:4px;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;}
+.btn-run::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:translateX(-100%);transition:transform .3s;z-index:0;}
+.btn-run:hover::before{transform:translateX(0);}
+.btn-run:hover{color:var(--bg);}
+.btn-run span{position:relative;z-index:1;}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;}
+.btn-run:disabled::before{display:none;}
+
+/* PROGRESS */
+#progressWrap{display:none;margin:20px 0;}
+.progress-outer{background:var(--bg2);border:1px solid var(--border);border-radius:2px;height:2px;overflow:hidden;margin-bottom:10px;}
+.progress-inner{height:100%;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));width:0%;transition:width .4s ease;}
+.progress-log{font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan-dim);}
+
+/* ERROR */
+.error-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:12px 16px;font-size:13px;color:#fca5a5;margin:12px 0;display:none;}
+
+/* ── RESULT ── */
+#resultWrap{display:none;}
+.result-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.result-brand{font-size:12px;color:var(--text-dim);margin-bottom:3px;}
+.result-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;}
+.result-mode-badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;margin-top:6px;display:inline-block;}
+.score-block{text-align:right;flex-shrink:0;}
+.score-num{font-family:'Space Grotesk',sans-serif;font-size:52px;font-weight:700;line-height:1;color:var(--cyan);}
+.score-denom{font-family:'Space Mono',monospace;font-size:13px;color:var(--text-dim);margin-left:3px;}
+.score-rank{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;padding:3px 9px;border-radius:3px;display:inline-block;margin-top:5px;}
+.rank-ready{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.4);}
+.rank-partial{background:var(--cyan-bg);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
+.rank-risk{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+.rank-none{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+
+/* RADAR + BARS */
+.radar-wrap{display:flex;gap:24px;margin-bottom:28px;align-items:center;}
+.module-scores{flex:1;display:flex;flex-direction:column;gap:12px;}
+.module-row{display:flex;flex-direction:column;gap:4px;}
+.module-row-hd{display:flex;justify-content:space-between;align-items:center;}
+.module-name{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--text-mid);}
+.module-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+.module-score-val{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;}
+.bar-outer{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.bar-inner{height:100%;border-radius:2px;transition:width 1s ease;width:0%;}
+.bar-cyan{background:var(--cyan);} .bar-amber{background:var(--amber);}
+.bar-green{background:var(--green);} .bar-purple{background:var(--purple);}
+
+/* SUB-SCORE TABLE */
+.sub-score-section{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.sub-score-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sub-score-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--text-mid);}
+.sub-score-total{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;}
+.sub-table{width:100%;border-collapse:collapse;}
+.sub-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--text-dim);text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);}
+.sub-table td{font-size:12px;padding:8px;border-bottom:1px solid rgba(30,45,69,0.5);}
+.sub-table tr:last-child td{border-bottom:none;}
+.sub-score-val{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;white-space:nowrap;}
+.sub-comment{font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:3px;}
+.sub-bar{width:80px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px;}
+.sub-bar-inner{height:100%;border-radius:2px;}
+
+/* ESTIMATE NOTICE */
+.estimate-notice{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:4px;padding:12px 16px;font-size:12px;color:#fcd34d;margin-bottom:20px;line-height:1.7;}
+.estimate-notice strong{display:block;margin-bottom:4px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;}
+
+/* FACT CHECK */
+.fact-check{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:4px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-top:8px;line-height:1.6;}
+.fact-check::before{content:'⚠ 要ファクトチェック — ';font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.05em;}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:18px;}
+.card.full{grid-column:span 2;}
+.card-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;}
+.card-content{font-size:13px;color:var(--text);line-height:1.8;}
+.card-content ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.card-content ul li{padding-left:16px;position:relative;}
+.card-content ul li::before{position:absolute;left:0;font-family:'Space Mono',monospace;font-size:10px;}
+.card-content ul li.pos::before{content:'✓';color:var(--green);}
+.card-content ul li.neg::before{content:'✕';color:var(--red);}
+.card-content ul li.warn::before{content:'⚠';color:var(--amber);}
+.card-content ul li.arr::before{content:'→';color:var(--cyan);}
+
+/* BOTTLENECK */
+.bottleneck{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:18px 20px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-start;}
+.bn-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.bn-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:var(--red);text-transform:uppercase;margin-bottom:5px;}
+.bn-text{font-size:13px;line-height:1.7;}
+
+/* Q GRID */
+.q-section{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.q-item{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px;}
+.q-cat{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.06em;padding:2px 5px;border-radius:2px;flex-shrink:0;margin-top:2px;white-space:nowrap;}
+.cat-name{background:rgba(0,212,255,.12);color:var(--cyan);}
+.cat-rec{background:rgba(16,185,129,.12);color:var(--green);}
+.cat-issue{background:rgba(245,158,11,.12);color:var(--amber);}
+.cat-compare{background:rgba(167,139,250,.12);color:var(--purple);}
+.q-text{font-size:12px;color:var(--text);line-height:1.5;}
+
+/* ACTIONS */
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.action-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:18px;}
+.action-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;padding:3px 7px;border-radius:2px;display:inline-block;margin-bottom:12px;}
+.tag-now{background:rgba(16,185,129,.15);color:var(--green);}
+.tag-month{background:var(--cyan-bg);color:var(--cyan);}
+.action-list{list-style:none;display:flex;flex-direction:column;gap:7px;}
+.action-list li{font-size:12px;color:var(--text);line-height:1.6;padding-left:14px;position:relative;}
+.action-list li::before{content:'─';position:absolute;left:0;color:var(--text-dim);font-family:'Space Mono',monospace;font-size:10px;}
+
+/* FAQ */
+.faq-section{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.faq-item{border-bottom:1px solid var(--border);padding:12px 0;}
+.faq-item:last-child{border-bottom:none;}
+.faq-q{font-family:'Space Mono',monospace;font-size:11px;color:var(--cyan);margin-bottom:5px;}
+.faq-a{font-size:13px;color:var(--text);line-height:1.7;}
+
+/* MONITORING */
+.monitor-section{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.monitor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.monitor-item{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;}
+.monitor-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.08em;margin-bottom:6px;}
+.monitor-val{font-size:13px;color:var(--text);line-height:1.6;}
+.monitor-notice{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:4px;padding:12px 14px;font-size:12px;color:var(--text-mid);line-height:1.7;margin-top:12px;}
+
+/* EXPORT */
+.export-row{display:flex;justify-content:center;gap:10px;margin-top:36px;flex-wrap:wrap;}
+.btn-export{background:transparent;border:1px solid var(--border);color:var(--text-mid);font-family:'Space Grotesk',sans-serif;font-size:12px;padding:9px 20px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.btn-export:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-reset{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Space Grotesk',sans-serif;font-size:12px;padding:9px 20px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.btn-reset:hover{border-color:var(--text-dim);color:var(--text);}
+
+/* UTIL */
+.hidden{display:none!important;}
+@media(max-width:640px){
+  .field-grid,.cards,.actions-grid,.radar-wrap,.q-grid,.monitor-grid{grid-template-columns:1fr;}
+  .field.span2,.card.full{grid-column:span 1;}
+  .header{flex-direction:column;align-items:flex-start;}
+  .log-grid{grid-template-columns:1fr;}
+  .log-grid .span2,.log-grid .span3{grid-column:span 1;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon"></div>
+    <span class="logo-text">AI Visibility Radar</span>
+    <span class="logo-badge">β2</span>
+  </div>
+  <div class="header-keys">
+    <div class="key-group">
+      <span class="key-label">ANTHROPIC</span>
+      <input class="key-input" id="keyAnthropic" type="password" placeholder="sk-ant-..." oninput="saveKey('anthropic',this.value)">
+      <span class="key-saved" id="savedAnthropic">✓ saved</span>
+    </div>
+    <div class="key-group">
+      <span class="key-label">GEMINI</span>
+      <input class="key-input" id="keyGemini" type="password" placeholder="AIza..." oninput="saveKey('gemini',this.value)">
+      <span class="key-saved" id="savedGemini">✓ saved</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="hero">
+    <div class="hero-eyebrow">AI Search Readiness Diagnostic · β2</div>
+    <h1 class="hero-title">あなたのブランドは<br><span>AIに正しく推薦されているか</span></h1>
+    <p class="hero-sub">AI検索でどの問いで選ばれ、どの競合に負けているかを4軸で診断します。簡易推定・実測ログの2モードに対応。</p>
+  </div>
+
+  <!-- MODE SWITCH -->
+  <div class="mode-switch">
+    <button class="mode-btn active" id="modeEstBtn" onclick="setMode('estimate')">
+      <span class="mode-tag tag-est">ESTIMATE</span>
+      簡易推定診断
+    </button>
+    <button class="mode-btn" id="modeRealBtn" onclick="setMode('real')">
+      <span class="mode-tag tag-real">MEASURED</span>
+      実測診断（AI回答ログ入力）
+    </button>
+  </div>
+
+  <!-- BASIC INFO -->
+  <div class="form-section">
+    <div class="sec-label">基本情報</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>会社名 / ブランド名<span class="req">*</span></label>
+        <input type="text" id="companyName" placeholder="例：楽天カード株式会社" oninput="saveForm()">
+      </div>
+      <div class="field">
+        <label>診断対象サービス名</label>
+        <input type="text" id="serviceName" placeholder="例：楽天カード" oninput="saveForm()">
+      </div>
+      <div class="field">
+        <label>公式URL</label>
+        <input type="url" id="officialUrl" placeholder="https://" oninput="saveForm()">
+      </div>
+      <div class="field">
+        <label>業種カテゴリ<span class="req">*</span></label>
+        <div class="industry-pills" id="industryPills">
+          <span class="pill" onclick="selectIndustry(this,'通信')">📡 通信</span>
+          <span class="pill" onclick="selectIndustry(this,'金融')">💳 金融</span>
+          <span class="pill" onclick="selectIndustry(this,'EC')">🛒 EC</span>
+          <span class="pill" onclick="selectIndustry(this,'旅行')">✈️ 旅行</span>
+          <span class="pill" onclick="selectIndustry(this,'決済')">📱 決済</span>
+          <span class="pill" onclick="selectIndustry(this,'その他')">⚙️ その他</span>
+        </div>
+        <input type="text" id="industry" placeholder="または直接入力" oninput="saveForm()" style="margin-top:6px;">
+      </div>
+      <div class="field span2">
+        <label>主要ターゲット<span class="req">*</span></label>
+        <input type="text" id="target" placeholder="例：20〜30代の若年層、初めてクレジットカードを作る人" oninput="saveForm()">
+      </div>
+      <div class="field span2">
+        <label>提供価値・解決する課題<span class="req">*</span></label>
+        <textarea id="value" placeholder="例：ポイント還元率が高く、年会費無料で作りやすい。楽天市場との相乗効果でお得。" oninput="saveForm()"></textarea>
+      </div>
+      <div class="field span2">
+        <label>伝えたいブランドメッセージ（任意）</label>
+        <input type="text" id="brandMessage" placeholder="例：ポイント経済圏のゲートウェイ、信頼できる生活インフラ" oninput="saveForm()">
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPETITIVE -->
+  <div class="form-section">
+    <div class="sec-label">競合・市場</div>
+    <div class="field-grid">
+      <div class="field span2">
+        <label>競合サービス（3〜5社、カンマ区切り）<span class="req">*</span></label>
+        <input type="text" id="competitors" placeholder="例：三井住友カード, PayPayカード, JCBカード" oninput="saveForm()">
+      </div>
+      <div class="field span2">
+        <label>AIで見つかりたい問い（改行区切り）<span class="req">*</span></label>
+        <textarea id="targetQueries" rows="4" placeholder="例：&#10;若者におすすめのクレジットカードは？&#10;ポイントが貯まりやすいクレジットカードは？" oninput="saveForm()"></textarea>
+        <div class="hint">顧客がAIに聞きそうな質問を記入。業種選択で自動入力されます。</div>
+      </div>
+    </div>
+    <!-- Preset questions area -->
+    <div id="presetArea" class="hidden">
+      <div class="preset-section" style="margin-top:12px;">
+        <div class="preset-title">推奨質問セット（クリックで追加）</div>
+        <div class="preset-list" id="presetList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRUST SIGNALS -->
+  <div class="form-section">
+    <div class="sec-label">信頼シグナル（任意）</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Googleビジネスプロフィール</label>
+        <select id="gbp" onchange="saveForm()">
+          <option value="">選択</option>
+          <option value="yes_updated">あり・最新</option>
+          <option value="yes_outdated">あり・更新が古い</option>
+          <option value="no">なし</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>構造化データ（スキーマ）実装</label>
+        <select id="schema" onchange="saveForm()">
+          <option value="">選択</option>
+          <option value="full">Organization+Service+FAQ 実装済み</option>
+          <option value="partial">一部のみ実装</option>
+          <option value="none">未実装</option>
+          <option value="unknown">不明</option>
+        </select>
+      </div>
+      <div class="field span2">
+        <label>第三者言及・受賞・メディア掲載</label>
+        <textarea id="trustSignals" rows="2" placeholder="例：日経MJ掲載、〇〇アワード受賞、G2レビュー500件" oninput="saveForm()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- REAL MODE: LOG INPUT -->
+  <div id="logSection" class="form-section hidden">
+    <div class="sec-label">AI回答ログ入力</div>
+    <div class="hint" style="margin-bottom:14px;">実際にChatGPT / Gemini / Perplexityで試した回答を入力してください。複数問を追加できます。</div>
+    <div id="logEntries"></div>
+    <button class="btn-add-log" onclick="addLogEntry()">＋ 回答ログを追加</button>
+  </div>
+
+  <!-- AI TOOLS -->
+  <div class="form-section">
+    <div class="sec-label">診断に使用するAIツール</div>
+    <div class="tool-check-grid">
+      <label class="tool-check"><input type="checkbox" id="toolChatGPT" checked><span>ChatGPT</span></label>
+      <label class="tool-check"><input type="checkbox" id="toolGemini" checked><span>Gemini</span></label>
+      <label class="tool-check"><input type="checkbox" id="toolPerplexity"><span>Perplexity</span></label>
+      <label class="tool-check"><input type="checkbox" id="toolGAIO"><span>Google AI Overview</span></label>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+
+  <div class="run-wrap">
+    <button type="button" class="btn-run" id="runBtn" onclick="runDiagnosis()">
+      <span>🔍 &nbsp;診断を実行する</span>
+    </button>
+  </div>
+
+  <div id="progressWrap">
+    <div class="progress-outer"><div class="progress-inner" id="progressBar"></div></div>
+    <div class="progress-log" id="progressLog">初期化中...</div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div id="resultWrap">
+
+    <div class="result-header">
+      <div>
+        <div class="result-brand" id="resBrand"></div>
+        <div class="result-title" id="resTitle"></div>
+        <span class="result-mode-badge" id="resModeBadge"></span>
+      </div>
+      <div class="score-block">
+        <div><span class="score-num" id="totalScore">—</span><span class="score-denom">/ 100</span></div>
+        <div><span class="score-rank" id="rankBadge"></span></div>
+      </div>
+    </div>
+
+    <!-- ESTIMATE NOTICE -->
+    <div id="estimateNotice" class="estimate-notice hidden">
+      <strong>ESTIMATE MODE</strong>
+      本診断は入力情報に基づく簡易推定です。実際のChatGPT / Gemini / Perplexity / Google AI Overviewの回答ログを用いることで、より正確なAI Visibilityスコアを算出できます。
+    </div>
+
+    <!-- RADAR + BARS -->
+    <div class="radar-wrap">
+      <canvas id="radarCanvas" width="200" height="200"></canvas>
+      <div class="module-scores">
+        <div class="module-row">
+          <div class="module-row-hd">
+            <span class="module-name"><span class="module-dot" style="background:var(--cyan)"></span>M1 AI VISIBILITY</span>
+            <span class="module-score-val" id="m1val" style="color:var(--cyan)">—/30</span>
+          </div>
+          <div class="bar-outer"><div class="bar-inner bar-cyan" id="m1bar"></div></div>
+        </div>
+        <div class="module-row">
+          <div class="module-row-hd">
+            <span class="module-name"><span class="module-dot" style="background:var(--amber)"></span>M2 ENTITY CLARITY</span>
+            <span class="module-score-val" id="m2val" style="color:var(--amber)">—/25</span>
+          </div>
+          <div class="bar-outer"><div class="bar-inner bar-amber" id="m2bar"></div></div>
+        </div>
+        <div class="module-row">
+          <div class="module-row-hd">
+            <span class="module-name"><span class="module-dot" style="background:var(--green)"></span>M3 CONTENT QUOTABILITY</span>
+            <span class="module-score-val" id="m3val" style="color:var(--green)">—/25</span>
+          </div>
+          <div class="bar-outer"><div class="bar-inner bar-green" id="m3bar"></div></div>
+        </div>
+        <div class="module-row">
+          <div class="module-row-hd">
+            <span class="module-name"><span class="module-dot" style="background:var(--purple)"></span>M4 TRUST SIGNAL</span>
+            <span class="module-score-val" id="m4val" style="color:var(--purple)">—/20</span>
+          </div>
+          <div class="bar-outer"><div class="bar-inner bar-purple" id="m4bar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB SCORES -->
+    <div id="subScoresWrap"></div>
+
+    <!-- SUMMARY -->
+    <div class="cards">
+      <div class="card full">
+        <div class="card-label">エグゼクティブサマリー</div>
+        <div class="card-content" id="resSummary"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">✓ 強み</div>
+        <div class="card-content" id="resStrengths"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">✕ 弱み</div>
+        <div class="card-content" id="resWeaknesses"></div>
+      </div>
+    </div>
+
+    <!-- BOTTLENECK -->
+    <div class="bottleneck" id="resBottleneck">
+      <div class="bn-icon">⚡</div>
+      <div>
+        <div class="bn-label">最大ボトルネック</div>
+        <div class="bn-text" id="resBottleneckText"></div>
+      </div>
+    </div>
+
+    <!-- QUESTIONS -->
+    <div class="q-section">
+      <div class="sec-label">推奨 AI 質問セット</div>
+      <div class="hint">以下の質問をChatGPT / Gemini / Perplexityで実際に確認してください</div>
+      <div class="q-grid" id="resQuestions"></div>
+    </div>
+
+    <!-- COMPETITIVE + GAPS -->
+    <div class="cards">
+      <div class="card full">
+        <div class="card-label">競合比較での注意ポイント</div>
+        <div class="card-content" id="resCompetitive"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">誤認識・古い情報のリスク</div>
+        <div class="card-content" id="resMisperception"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">AIに伝わっていない可能性がある点</div>
+        <div class="card-content" id="resGaps"></div>
+      </div>
+    </div>
+
+    <!-- FACT CHECK -->
+    <div id="factCheckWrap"></div>
+
+    <!-- ACTIONS -->
+    <div class="sec-label" style="margin-bottom:12px;">優先改善アクション</div>
+    <div class="actions-grid">
+      <div class="action-card">
+        <span class="action-tag tag-now">TODAY〜1WEEK</span>
+        <ul class="action-list" id="resActionsNow"></ul>
+      </div>
+      <div class="action-card">
+        <span class="action-tag tag-month">30DAY PLAN</span>
+        <ul class="action-list" id="resActions30"></ul>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-section">
+      <div class="sec-label">推奨 FAQ（AIに引用されやすい形式）</div>
+      <div id="resFaq"></div>
+    </div>
+
+    <!-- MONITORING -->
+    <div class="monitor-section">
+      <div class="sec-label">次回モニタリング</div>
+      <div class="monitor-grid" id="resMonitor"></div>
+      <div class="monitor-notice">
+        次回診断では、今回と同じ質問セットを用いて、AI出現率・推薦文脈出現率・比較文脈勝率・説明正確性・誤認識件数の変化を確認してください。今回の改善アクションで追加したFAQ・比較ページ・構造化データがAI回答に反映されているかを重点的に確認します。
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-row">
+      <button class="btn-export" onclick="exportMarkdown()">📄 Markdown</button>
+      <button class="btn-export" onclick="exportJSON()">{ } JSON</button>
+      <button class="btn-reset" onclick="resetForm()">↺ 別のサービスを診断</button>
+    </div>
+
+  </div><!-- /resultWrap -->
+</main>
+
+<script>
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
+const INDUSTRY_PRESETS = {
+  '通信': {
+    questions: [
+      {cat:'推薦型',text:'携帯料金を安くしたい人におすすめのスマホ回線は？'},
+      {cat:'比較型',text:'ahamoとpovo、どちらを選ぶべき？'},
+      {cat:'課題解決型',text:'一人暮らしの学生におすすめのスマホ回線は？'},
+      {cat:'推薦型',text:'データ容量が多くてお得なスマホプランは？'},
+      {cat:'比較型',text:'MNOとMVNOの違いは？どちらがおすすめ？'},
+    ],
+    focus: ['料金プラン','データ容量','通信エリア','乗り換えやすさ','キャンペーン'],
+    factCheckTriggers: ['料金','エリア','人口カバー率','速度制限','キャンペーン']
+  },
+  '金融': {
+    questions: [
+      {cat:'推薦型',text:'NISA初心者におすすめの証券会社は？'},
+      {cat:'推薦型',text:'ポイントが貯まりやすいクレジットカードは？'},
+      {cat:'比較型',text:'SBI証券と楽天証券の違いは？'},
+      {cat:'課題解決型',text:'初めてクレジットカードを作るならどれがいい？'},
+      {cat:'推薦型',text:'年会費無料でお得なクレジットカードは？'},
+    ],
+    focus: ['手数料','信頼性','初心者向け説明','NISA対応','セキュリティ'],
+    factCheckTriggers: ['手数料','利回り','還元率','金利','条件','法規制']
+  },
+  'EC': {
+    questions: [
+      {cat:'推薦型',text:'ネットショッピングでおすすめのECサイトは？'},
+      {cat:'比較型',text:'Amazonと楽天市場の違いは？'},
+      {cat:'課題解決型',text:'日用品をお得に買うならどのECサイトがいい？'},
+      {cat:'推薦型',text:'ポイントが貯まりやすいECサイトは？'},
+      {cat:'課題解決型',text:'送料無料で買い物できるECサイトは？'},
+    ],
+    focus: ['品揃え','価格','配送','ポイント','レビュー信頼性'],
+    factCheckTriggers: ['送料','ポイント還元率','キャンペーン','会員費']
+  },
+  '旅行': {
+    questions: [
+      {cat:'推薦型',text:'旅行予約サイトのおすすめは？'},
+      {cat:'比較型',text:'じゃらんと楽天トラベルの違いは？'},
+      {cat:'課題解決型',text:'ポイントが貯まる旅行予約サイトは？'},
+      {cat:'推薦型',text:'格安ホテルを探すならどのサイトがいい？'},
+      {cat:'課題解決型',text:'直前予約でお得なホテルを見つけるには？'},
+    ],
+    focus: ['価格比較','宿泊施設数','口コミ','キャンセル条件','ポイント還元'],
+    factCheckTriggers: ['キャンセル条件','料金','ポイント還元率','特典']
+  },
+  '決済': {
+    questions: [
+      {cat:'推薦型',text:'おすすめのスマホ決済アプリは？'},
+      {cat:'比較型',text:'PayPayと楽天ペイの違いは？'},
+      {cat:'課題解決型',text:'ポイントが貯まりやすいQR決済は？'},
+      {cat:'推薦型',text:'コンビニで使いやすいキャッシュレス決済は？'},
+      {cat:'課題解決型',text:'セキュリティが高いスマホ決済は？'},
+    ],
+    focus: ['使える店舗数','還元率','キャンペーン','セキュリティ','チャージ方法'],
+    factCheckTriggers: ['還元率','キャンペーン','手数料','使用可能店舗数']
+  }
+};
+
+let currentMode = 'estimate';
+let logCount = 0;
+let selectedIndustry = '';
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Load saved keys
+  const ka = localStorage.getItem('avr_key_anthropic');
+  const kg = localStorage.getItem('avr_key_gemini');
+  if (ka) document.getElementById('keyAnthropic').value = ka;
+  if (kg) document.getElementById('keyGemini').value = kg;
+  // Load saved form
+  loadForm();
+});
+
+function saveKey(provider, val) {
+  localStorage.setItem('avr_key_' + provider, val);
+  const el = document.getElementById('saved' + provider.charAt(0).toUpperCase() + provider.slice(1));
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function saveForm() {
+  const fields = ['companyName','serviceName','officialUrl','industry','target','value','brandMessage','competitors','targetQueries','gbp','schema','trustSignals'];
+  const data = {};
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.value;
+  });
+  localStorage.setItem('avr_form', JSON.stringify(data));
+}
+
+function loadForm() {
+  const raw = localStorage.getItem('avr_form');
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    Object.entries(data).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    });
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════
+// MODE SWITCH
+// ═══════════════════════════════════════
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeEstBtn').classList.toggle('active', mode === 'estimate');
+  document.getElementById('modeRealBtn').classList.toggle('active', mode === 'real');
+  document.getElementById('logSection').classList.toggle('hidden', mode !== 'real');
+  if (mode === 'real' && logCount === 0) addLogEntry();
+}
+
+// ═══════════════════════════════════════
+// INDUSTRY
+// ═══════════════════════════════════════
+function selectIndustry(el, name) {
+  document.querySelectorAll('#industryPills .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  selectedIndustry = name;
+  document.getElementById('industry').value = name;
+  saveForm();
+  // Load presets
+  const preset = INDUSTRY_PRESETS[name];
+  if (preset) {
+    document.getElementById('presetArea').classList.remove('hidden');
+    const list = document.getElementById('presetList');
+    const catClass = {'指名型':'cat-name','推薦型':'cat-rec','課題解決型':'cat-issue','比較型':'cat-compare'};
+    list.innerHTML = preset.questions.map(q =>
+      `<div class="preset-item">
+        <span class="preset-cat ${catClass[q.cat]||'cat-name'}">${q.cat}</span>
+        <span>${q.text}</span>
+        <button class="btn-use-preset" onclick="addPresetQ('${q.text.replace(/'/g,"\\'")}')">追加</button>
+      </div>`
+    ).join('');
+  }
+}
+
+function addPresetQ(text) {
+  const ta = document.getElementById('targetQueries');
+  const current = ta.value.trim();
+  ta.value = current ? current + '\n' + text : text;
+  saveForm();
+}
+
+// ═══════════════════════════════════════
+// LOG ENTRIES
+// ═══════════════════════════════════════
+function addLogEntry() {
+  logCount++;
+  const n = logCount;
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.id = 'log_' + n;
+  div.innerHTML = `
+    <div class="log-entry-header">
+      <span class="log-entry-num">LOG #${n}</span>
+      <button class="log-remove" onclick="removeLog(${n})">削除</button>
+    </div>
+    <div class="log-grid">
+      <div class="field"><label>診断日</label><input type="date" id="log${n}_date"></div>
+      <div class="field"><label>AIツール</label>
+        <select id="log${n}_tool">
+          <option value="ChatGPT">ChatGPT</option>
+          <option value="Gemini">Gemini</option>
+          <option value="Perplexity">Perplexity</option>
+          <option value="Google AI Overview">Google AI Overview</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="field"><label>モデル名</label><input type="text" id="log${n}_model" placeholder="例：GPT-4o"></div>
+      <div class="field"><label>質問カテゴリ</label>
+        <select id="log${n}_cat">
+          <option value="指名型">指名型</option>
+          <option value="推薦型">推薦型</option>
+          <option value="課題解決型">課題解決型</option>
+          <option value="比較型">比較型</option>
+        </select>
+      </div>
+      <div class="field span2"><label>質問文<span class="req">*</span></label><input type="text" id="log${n}_q" placeholder="実際に入力したプロンプト"></div>
+      <div class="field span3"><label>回答全文<span class="req">*</span></label><textarea id="log${n}_answer" rows="4" placeholder="AIの回答をそのままペーストしてください"></textarea></div>
+      <div class="field"><label>自社出現</label>
+        <select id="log${n}_presence">
+          <option value="あり">あり</option><option value="なし">なし</option>
+        </select>
+      </div>
+      <div class="field"><label>出現順位</label>
+        <select id="log${n}_rank">
+          <option value="1位">1位</option><option value="2位">2位</option>
+          <option value="3位以下">3位以下</option><option value="未出現">未出現</option>
+        </select>
+      </div>
+      <div class="field"><label>回答トーン</label>
+        <select id="log${n}_tone">
+          <option value="好意的">好意的</option><option value="中立">中立</option><option value="否定的">否定的</option>
+        </select>
+      </div>
+      <div class="field"><label>説明正確性</label>
+        <select id="log${n}_accuracy">
+          <option value="正確">正確</option><option value="一部誤り">一部誤り</option><option value="誤り">誤り</option>
+        </select>
+      </div>
+      <div class="field"><label>ブランドメッセージ一致</label>
+        <select id="log${n}_brand">
+          <option value="一致">一致</option><option value="部分一致">部分一致</option><option value="不一致">不一致</option>
+        </select>
+      </div>
+      <div class="field"><label>誤認識内容（任意）</label><input type="text" id="log${n}_wrong" placeholder="誤った記述があれば記録"></div>
+      <div class="field span2"><label>評価メモ</label><input type="text" id="log${n}_memo" placeholder="担当者コメント"></div>
+    </div>`;
+  document.getElementById('logEntries').appendChild(div);
+}
+
+function removeLog(n) {
+  const el = document.getElementById('log_' + n);
+  if (el) el.remove();
+}
+
+function collectLogs() {
+  const logs = [];
+  document.querySelectorAll('.log-entry').forEach(entry => {
+    const n = entry.id.replace('log_','');
+    const get = key => {
+      const el = document.getElementById(`log${n}_${key}`);
+      return el ? el.value : '';
+    };
+    logs.push({
+      date: get('date'), tool: get('tool'), model: get('model'),
+      category: get('cat'), question: get('q'), answer: get('answer'),
+      presence: get('presence'), rank: get('rank'), tone: get('tone'),
+      accuracy: get('accuracy'), brandMatch: get('brand'),
+      wrongInfo: get('wrong'), memo: get('memo')
+    });
+  });
+  return logs.filter(l => l.question);
+}
+
+// ═══════════════════════════════════════
+// RADAR
+// ═══════════════════════════════════════
+function drawRadar(scores, maxes) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, R = 72;
+  const n = 4;
+  const angles = Array.from({length:n}, (_,i) => Math.PI*2*i/n - Math.PI/2);
+  const colors = ['#00d4ff','#f59e0b','#10b981','#a78bfa'];
+  const norm = scores.map((s,i) => s/maxes[i]);
+
+  ctx.clearRect(0,0,W,H);
+  const drawGrid = () => {
+    for (let r=1; r<=4; r++) {
+      ctx.beginPath();
+      for (let i=0; i<=n; i++) {
+        const a = angles[i%n], rad = R*r/4;
+        i===0 ? ctx.moveTo(cx+Math.cos(a)*rad, cy+Math.sin(a)*rad)
+               : ctx.lineTo(cx+Math.cos(a)*rad, cy+Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.strokeStyle='rgba(30,45,69,0.8)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    angles.forEach(a => {
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*R, cy+Math.sin(a)*R);
+      ctx.strokeStyle='rgba(30,45,69,0.6)'; ctx.stroke();
+    });
+  };
+
+  let progress = 0;
+  const animate = () => {
+    ctx.clearRect(0,0,W,H);
+    drawGrid();
+    const p = Math.min(progress, 1);
+    ctx.beginPath();
+    norm.forEach((v,i) => {
+      const r = R*v*p;
+      const x = cx+Math.cos(angles[i])*r, y = cy+Math.sin(angles[i])*r;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.fillStyle='rgba(0,212,255,0.1)'; ctx.fill();
+    ctx.strokeStyle='rgba(0,212,255,0.6)'; ctx.lineWidth=2; ctx.stroke();
+    norm.forEach((v,i) => {
+      const r = R*v*p;
+      const x = cx+Math.cos(angles[i])*r, y = cy+Math.sin(angles[i])*r;
+      ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+      ctx.fillStyle=colors[i]; ctx.fill();
+    });
+    ['M1','M2','M3','M4'].forEach((l,i) => {
+      const r = R+20;
+      ctx.fillStyle='#64748b'; ctx.font='9px Space Mono,monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(l, cx+Math.cos(angles[i])*r, cy+Math.sin(angles[i])*r);
+    });
+    if (progress < 1) { progress += 0.04; requestAnimationFrame(animate); }
+  };
+  animate();
+}
+
+// ═══════════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════════
+function setProgress(pct, msg) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLog').textContent = msg;
+}
+
+// ═══════════════════════════════════════
+// MAIN DIAGNOSIS
+// ═══════════════════════════════════════
+async function runDiagnosis() {
+  const apiKey = document.getElementById('keyAnthropic').value.trim();
+  const company = document.getElementById('companyName').value.trim();
+  const service = document.getElementById('serviceName').value.trim();
+  const url = document.getElementById('officialUrl').value.trim();
+  const industry = document.getElementById('industry').value.trim();
+  const target = document.getElementById('target').value.trim();
+  const value = document.getElementById('value').value.trim();
+  const brand = document.getElementById('brandMessage').value.trim();
+  const competitors = document.getElementById('competitors').value.trim();
+  const targetQueries = document.getElementById('targetQueries').value.trim();
+  const gbp = document.getElementById('gbp').value;
+  const schema = document.getElementById('schema').value;
+  const trust = document.getElementById('trustSignals').value.trim();
+  const tools = ['ChatGPT','Gemini','Perplexity','Google AI Overview']
+    .filter((_,i) => [document.getElementById('toolChatGPT'), document.getElementById('toolGemini'),
+      document.getElementById('toolPerplexity'), document.getElementById('toolGAIO')][i].checked);
+  const logs = currentMode === 'real' ? collectLogs() : [];
+
+  const errBox = document.getElementById('errorBox');
+  errBox.style.display = 'none';
+
+  if (!apiKey) { showError('Anthropic APIキーを入力してください（右上のフィールド）'); return; }
+  if (!company || !industry || !target || !value || !competitors || !targetQueries) {
+    showError('必須項目（*）をすべて入力してください'); return; }
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('resultWrap').style.display = 'none';
+
+  const diagName = service || company;
+
+  try {
+    setProgress(10, 'プロンプトを構築しています...');
+    await sleep(300);
+
+    const ind = INDUSTRY_PRESETS[industry] || {};
+    const prompt = buildPrompt({
+      company, service: diagName, url, industry, target, value, brand,
+      competitors, targetQueries, gbp, schema, trust, tools: tools.join('/'),
+      mode: currentMode, logs, factTriggers: ind.factCheckTriggers || [],
+      industryFocus: ind.focus || []
+    });
+
+    setProgress(30, 'Claude に診断を依頼しています...');
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 6000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    setProgress(70, '診断結果を解析しています...');
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raw = data.content[0].text;
+
+    setProgress(88, 'スコアを計算しています...');
+    await sleep(200);
+
+    let result;
+    try {
+      const m = raw.match(/```json\s*([\s\S]*?)\s*```/);
+      result = JSON.parse(m ? m[1] : raw);
+    } catch(e) {
+      throw new Error('診断結果のパースに失敗しました。もう一度お試しください。');
+    }
+
+    setProgress(100, '診断完了');
+    await sleep(300);
+
+    document.getElementById('progressWrap').style.display = 'none';
+    renderResult(result, company, diagName);
+
+  } catch(e) {
+    document.getElementById('progressWrap').style.display = 'none';
+    showError('エラー：' + e.message);
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = msg; b.style.display = 'block';
+  document.getElementById('runBtn').disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════
+// PROMPT
+// ═══════════════════════════════════════
+function buildPrompt(d) {
+  const logsText = d.logs.length > 0
+    ? '\n【実測AI回答ログ】\n' + d.logs.map((l,i) =>
+        `LOG${i+1}: [${l.tool}/${l.category}] Q: "${l.question}" → 自社出現:${l.presence} 順位:${l.rank} トーン:${l.tone} 正確性:${l.accuracy} ブランド一致:${l.brandMatch}${l.wrongInfo ? ' 誤認識:'+l.wrongInfo : ''}\n回答: ${l.answer.slice(0,400)}`
+      ).join('\n')
+    : '';
+
+  return `あなたは「AI Visibility Radar β2」診断エンジンです。以下の情報をもとに、AI検索対応度を診断してください。
+
+【診断モード】${d.mode === 'real' ? '実測診断（AI回答ログあり）' : '簡易推定診断'}
+【診断対象】会社: ${d.company} / サービス: ${d.service} / URL: ${d.url||'未入力'} / 業種: ${d.industry}
+【ターゲット】${d.target}
+【提供価値】${d.value}
+【ブランドメッセージ】${d.brand||'未入力'}
+【競合】${d.competitors}
+【見つかりたい問い】${d.targetQueries}
+【GBP】${d.gbp||'不明'} / 【スキーマ】${d.schema||'不明'} / 【信頼シグナル】${d.trust||'未入力'}
+【対象AIツール】${d.tools}
+【業種重点項目】${d.industryFocus.join('/')||'未指定'}
+${logsText}
+
+【診断フレームワーク（100点満点）】
+
+M1 AI Visibility（30点）- 5サブ指標に分解すること：
+- Presence（AIに名前が出るか）: 最大7点
+- Accuracy（正しく説明されるか）: 最大6点
+- Preference（推薦文脈で選ばれるか）: 最大7点
+- Comparative Strength（比較で有利に描かれるか）: 最大5点
+- Message Fit（ブランドメッセージ一致）: 最大5点
+
+M2 Entity Clarity（25点）- サブ指標：
+- スキーマ実装（Organization/Service/FAQ）: 最大8点
+- GBP整備: 最大5点
+- NAP一貫性: 最大4点
+- 主要人物オンライン存在感: 最大4点
+- 公式情報と外部情報の整合性: 最大4点
+
+M3 Content Quotability（25点）- サブ指標：
+- ページ上部の結論明確性: 最大5点
+- 問いへの直接回答: 最大5点
+- FAQ充実度: 最大5点
+- 競合差分の明文化: 最大5点
+- 独自データ・一次情報: 最大5点
+
+M4 Trust Signal（20点）- サブ指標：
+- レビュー数・鮮度: 最大6点
+- 第三者メディア言及: 最大5点
+- 認証・受賞: 最大3点
+- 導入事例・顧客の声: 最大3点
+- 責任者プロフィール透明性: 最大3点
+
+【業種別重点】
+業種「${d.industry}」の場合、${d.industryFocus.length > 0 ? d.industryFocus.join('・') + 'に関する説明のAI可読性を重視して採点すること。' : '一般的な診断を行うこと。'}
+
+【ファクトチェックフラグ】
+以下のキーワードが推奨FAQや改善アクションに含まれる場合、requires_fact_check: true にすること：
+${d.factTriggers.length > 0 ? d.factTriggers.join('・') : '料金・手数料・還元率・キャンペーン・通信エリア・法規制'}
+
+【出力形式 - 必ず以下のJSONのみで回答】
+\`\`\`json
+{
+  "scores": {
+    "m1": <0-30>,
+    "m2": <0-25>,
+    "m3": <0-25>,
+    "m4": <0-20>,
+    "total": <0-100>
+  },
+  "rank": "AI Ready|Partial|At Risk|Not Visible",
+  "sub_scores": {
+    "m1": [
+      {"name": "Presence", "score": <0-7>, "max": 7, "comment": "<根拠コメント>"},
+      {"name": "Accuracy", "score": <0-6>, "max": 6, "comment": "<根拠コメント>"},
+      {"name": "Preference", "score": <0-7>, "max": 7, "comment": "<根拠コメント>"},
+      {"name": "Comparative Strength", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "Message Fit", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"}
+    ],
+    "m2": [
+      {"name": "スキーマ実装", "score": <0-8>, "max": 8, "comment": "<根拠コメント>"},
+      {"name": "GBP整備", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "NAP一貫性", "score": <0-4>, "max": 4, "comment": "<根拠コメント>"},
+      {"name": "主要人物存在感", "score": <0-4>, "max": 4, "comment": "<根拠コメント>"},
+      {"name": "情報整合性", "score": <0-4>, "max": 4, "comment": "<根拠コメント>"}
+    ],
+    "m3": [
+      {"name": "結論明確性", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "問いへの直接回答", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "FAQ充実度", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "競合差分明文化", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "独自データ", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"}
+    ],
+    "m4": [
+      {"name": "レビュー鮮度", "score": <0-6>, "max": 6, "comment": "<根拠コメント>"},
+      {"name": "第三者言及", "score": <0-5>, "max": 5, "comment": "<根拠コメント>"},
+      {"name": "認証・受賞", "score": <0-3>, "max": 3, "comment": "<根拠コメント>"},
+      {"name": "導入事例", "score": <0-3>, "max": 3, "comment": "<根拠コメント>"},
+      {"name": "責任者プロフィール", "score": <0-3>, "max": 3, "comment": "<根拠コメント>"}
+    ]
+  },
+  "summary": "<エグゼクティブサマリー3文>",
+  "strengths": ["<強み1>", "<強み2>", "<強み3>"],
+  "weaknesses": ["<弱み1>", "<弱み2>", "<弱み3>"],
+  "bottleneck": {"module": "<モジュール名>", "description": "<2〜3文の説明>"},
+  "questions": [
+    {"category": "指名型", "text": "<質問文>"},
+    {"category": "推薦型", "text": "<質問文>"},
+    {"category": "課題解決型", "text": "<質問文>"},
+    {"category": "比較型", "text": "<質問文>"},
+    {"category": "推薦型", "text": "<質問文>"},
+    {"category": "比較型", "text": "<質問文>"}
+  ],
+  "competitive": ["<競合注意点1>", "<注意点2>", "<注意点3>"],
+  "misperceptions": ["<誤認識リスク1>", "<リスク2>"],
+  "gaps": ["<AIに伝わっていない点1>", "<点2>", "<点3>"],
+  "requires_fact_check": <true|false>,
+  "fact_check_items": ["<要確認項目1>", "<項目2>"],
+  "actions_now": ["<今週アクション1>", "<2>", "<3>", "<4>"],
+  "actions_30": ["<30日アクション1>", "<2>", "<3>", "<4>"],
+  "faq": [
+    {"q": "<質問1>", "a": "<推奨回答1>"},
+    {"q": "<質問2>", "a": "<推奨回答2>"},
+    {"q": "<質問3>", "a": "<推奨回答3>"},
+    {"q": "<質問4>", "a": "<推奨回答4>"}
+  ],
+  "monitoring": {
+    "next_date": "<推奨次回診断日 YYYY-MM形式>",
+    "priority_metrics": ["<重点確認指標1>", "<指標2>", "<指標3>"],
+    "watch_competitors": ["<注目すべき競合1>", "<競合2>"],
+    "action_verification": ["<施策効果確認ポイント1>", "<ポイント2>"]
+  }
+}
+\`\`\`
+
+採点注意：
+- ${d.mode === 'real' ? '実測ログが入力されているため、ログの内容を最優先で採点すること' : '入力情報が少ない項目は保守的に低く採点すること'}
+- 業種特性（${d.industry}）を踏まえた現実的なスコアにすること
+- 全テキストは日本語で出力すること`;
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function renderResult(r, company, service) {
+  document.getElementById('resBrand').textContent = company;
+  document.getElementById('resTitle').textContent = service + ' — AI Visibility 診断レポート';
+
+  const mb = document.getElementById('resModeBadge');
+  if (currentMode === 'estimate') {
+    mb.textContent = 'ESTIMATE MODE'; mb.style.cssText = 'background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);';
+  } else {
+    mb.textContent = 'MEASURED MODE'; mb.style.cssText = 'background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.3);';
+  }
+
+  document.getElementById('totalScore').textContent = r.scores.total;
+  const rankMap = {'AI Ready':['AI READY','rank-ready'],'Partial':['PARTIAL','rank-partial'],'At Risk':['AT RISK','rank-risk'],'Not Visible':['NOT VISIBLE','rank-none']};
+  const [rl, rc] = rankMap[r.rank] || ['—',''];
+  const rb = document.getElementById('rankBadge');
+  rb.textContent = rl; rb.className = 'score-rank ' + rc;
+
+  document.getElementById('estimateNotice').classList.toggle('hidden', currentMode !== 'estimate');
+
+  const m = r.scores;
+  setTimeout(() => {
+    document.getElementById('m1val').textContent = m.m1+'/30';
+    document.getElementById('m2val').textContent = m.m2+'/25';
+    document.getElementById('m3val').textContent = m.m3+'/25';
+    document.getElementById('m4val').textContent = m.m4+'/20';
+    document.getElementById('m1bar').style.width = (m.m1/30*100)+'%';
+    document.getElementById('m2bar').style.width = (m.m2/25*100)+'%';
+    document.getElementById('m3bar').style.width = (m.m3/25*100)+'%';
+    document.getElementById('m4bar').style.width = (m.m4/20*100)+'%';
+  }, 100);
+
+  drawRadar([m.m1, m.m2, m.m3, m.m4], [30, 25, 25, 20]);
+
+  // SUB SCORES
+  const moduleColors = ['var(--cyan)','var(--amber)','var(--green)','var(--purple)'];
+  const moduleTitles = ['M1 AI Visibility','M2 Entity Clarity','M3 Content Quotability','M4 Trust Signal'];
+  const moduleMaxes = [30, 25, 25, 20];
+  const subWrap = document.getElementById('subScoresWrap');
+  subWrap.innerHTML = '';
+  ['m1','m2','m3','m4'].forEach((mk, mi) => {
+    const subs = r.sub_scores?.[mk];
+    if (!subs) return;
+    const total = subs.reduce((a,s) => a+s.score, 0);
+    const col = moduleColors[mi];
+    const div = document.createElement('div');
+    div.className = 'sub-score-section';
+    div.innerHTML = `
+      <div class="sub-score-header">
+        <span class="sub-score-title" style="color:${col}">${moduleTitles[mi]} 詳細スコア</span>
+        <span class="sub-score-total" style="color:${col}">${total} / ${moduleMaxes[mi]}点</span>
+      </div>
+      <table class="sub-table">
+        <thead><tr><th>指標</th><th>点数</th><th>根拠</th></tr></thead>
+        <tbody>${subs.map(s => `
+          <tr>
+            <td style="font-weight:500;color:var(--text)">${s.name}</td>
+            <td>
+              <span class="sub-score-val" style="color:${col}">${s.score}</span>
+              <span style="color:var(--text-dim);font-size:11px;font-family:'Space Mono',monospace">/${s.max}</span>
+              <span class="sub-bar"><span class="sub-bar-inner" style="width:${s.score/s.max*100}%;background:${col}"></span></span>
+            </td>
+            <td><div class="sub-comment">${s.comment}</div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+    subWrap.appendChild(div);
+  });
+
+  // TEXT SECTIONS
+  document.getElementById('resSummary').innerHTML = r.summary;
+  document.getElementById('resStrengths').innerHTML = '<ul>' + r.strengths.map(s=>`<li class="pos">${s}</li>`).join('') + '</ul>';
+  document.getElementById('resWeaknesses').innerHTML = '<ul>' + r.weaknesses.map(s=>`<li class="neg">${s}</li>`).join('') + '</ul>';
+  document.getElementById('resBottleneckText').innerHTML = `<strong>${r.bottleneck.module}</strong> — ${r.bottleneck.description}`;
+
+  const catClass = {'指名型':'cat-name','推薦型':'cat-rec','課題解決型':'cat-issue','比較型':'cat-compare'};
+  document.getElementById('resQuestions').innerHTML = r.questions.map(q =>
+    `<div class="q-item"><span class="q-cat ${catClass[q.category]||'cat-name'}">${q.category}</span><span class="q-text">${q.text}</span></div>`
+  ).join('');
+
+  document.getElementById('resCompetitive').innerHTML = '<ul>' + r.competitive.map(c=>`<li class="warn">${c}</li>`).join('') + '</ul>';
+  document.getElementById('resMisperception').innerHTML = '<ul>' + r.misperceptions.map(m=>`<li class="neg">${m}</li>`).join('') + '</ul>';
+  document.getElementById('resGaps').innerHTML = '<ul>' + r.gaps.map(g=>`<li class="arr">${g}</li>`).join('') + '</ul>';
+
+  // FACT CHECK
+  const fcWrap = document.getElementById('factCheckWrap');
+  if (r.requires_fact_check && r.fact_check_items?.length > 0) {
+    fcWrap.innerHTML = `<div class="fact-check">以下の項目は変更される可能性があるため、公開前に必ず公式情報で確認してください：${r.fact_check_items.join('・')}</div>`;
+  } else { fcWrap.innerHTML = ''; }
+
+  document.getElementById('resActionsNow').innerHTML = r.actions_now.map(a=>`<li>${a}</li>`).join('');
+  document.getElementById('resActions30').innerHTML = r.actions_30.map(a=>`<li>${a}</li>`).join('');
+  document.getElementById('resFaq').innerHTML = r.faq.map(f =>
+    `<div class="faq-item"><div class="faq-q">Q: ${f.q}</div><div class="faq-a">${f.a}</div></div>`
+  ).join('');
+
+  // MONITORING
+  const mon = r.monitoring || {};
+  document.getElementById('resMonitor').innerHTML = `
+    <div class="monitor-item">
+      <div class="monitor-label">次回診断推奨日</div>
+      <div class="monitor-val">${mon.next_date || '翌月同時期'}</div>
+    </div>
+    <div class="monitor-item">
+      <div class="monitor-label">重点確認指標</div>
+      <div class="monitor-val">${(mon.priority_metrics||[]).join(' / ')}</div>
+    </div>
+    <div class="monitor-item">
+      <div class="monitor-label">注目すべき競合</div>
+      <div class="monitor-val">${(mon.watch_competitors||[]).join(' / ')}</div>
+    </div>
+    <div class="monitor-item">
+      <div class="monitor-label">施策効果確認ポイント</div>
+      <div class="monitor-val">${(mon.action_verification||[]).map(v=>`• ${v}`).join('<br>')}</div>
+    </div>`;
+
+  document.getElementById('resultWrap').style.display = 'block';
+  document.getElementById('resultWrap').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('runBtn').disabled = false;
+
+  window._lastResult = r;
+  window._lastMeta = {company, service, mode: currentMode, date: new Date().toLocaleDateString('ja-JP')};
+}
+
+// ═══════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════
+function exportJSON() {
+  const r = window._lastResult;
+  if (!r) return;
+  const meta = window._lastMeta;
+  const blob = new Blob([JSON.stringify({meta, ...r}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `avr_${meta.service}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function exportMarkdown() {
+  const r = window._lastResult;
+  if (!r) return;
+  const meta = window._lastMeta;
+  const subMd = (mk, title) => {
+    const subs = r.sub_scores?.[mk];
+    if (!subs) return '';
+    return `\n### ${title} 詳細\n| 指標 | 点数 | 根拠 |\n|------|------|------|\n` +
+      subs.map(s => `| ${s.name} | ${s.score}/${s.max} | ${s.comment} |`).join('\n');
+  };
+  const md = `# AI Visibility Radar 診断レポート
+診断対象：${meta.service}（${meta.company}）｜診断日：${meta.date}｜モード：${meta.mode === 'estimate' ? '簡易推定' : '実測'}
+
+${meta.mode === 'estimate' ? '> ⚠️ 本診断は入力情報に基づく簡易推定です。実測ログを用いることでより正確なスコアを算出できます。\n' : ''}
+
+## 総合スコア：${r.scores.total} / 100（${r.rank}）
+
+| M1 AI Visibility | M2 Entity Clarity | M3 Content Quotability | M4 Trust Signal |
+|---|---|---|---|
+| ${r.scores.m1}/30 | ${r.scores.m2}/25 | ${r.scores.m3}/25 | ${r.scores.m4}/20 |
+
+## エグゼクティブサマリー
+${r.summary}
+
+## 強み
+${r.strengths.map(s=>`- ✓ ${s}`).join('\n')}
+
+## 弱み
+${r.weaknesses.map(s=>`- ✕ ${s}`).join('\n')}
+
+## 最大ボトルネック
+**${r.bottleneck.module}**：${r.bottleneck.description}
+${subMd('m1','M1 AI Visibility')}${subMd('m2','M2 Entity Clarity')}${subMd('m3','M3 Content Quotability')}${subMd('m4','M4 Trust Signal')}
+
+## 推奨 AI 質問セット
+${r.questions.map(q=>`- [${q.category}] ${q.text}`).join('\n')}
+
+## 競合比較注意点
+${r.competitive.map(c=>`- ⚠️ ${c}`).join('\n')}
+
+${r.requires_fact_check ? `## ⚠️ 要ファクトチェック\n${r.fact_check_items.map(f=>`- ${f}`).join('\n')}\n` : ''}
+
+## 優先改善アクション（今週）
+${r.actions_now.map(a=>`- [ ] ${a}`).join('\n')}
+
+## 30日改善プラン
+${r.actions_30.map(a=>`- [ ] ${a}`).join('\n')}
+
+## 推奨FAQ
+${r.faq.map(f=>`**Q: ${f.q}**\nA: ${f.a}\n`).join('\n')}
+
+## 次回モニタリング
+- 次回推奨日：${r.monitoring?.next_date || '翌月同時期'}
+- 重点指標：${(r.monitoring?.priority_metrics||[]).join(' / ')}
+- 施策効果確認：${(r.monitoring?.action_verification||[]).join(' / ')}
+`;
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `avr_${meta.service}_${new Date().toISOString().slice(0,10)}.md`;
+  a.click();
+}
+
+function resetForm() {
+  document.getElementById('resultWrap').style.display = 'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('runBtn').disabled = false;
+}
+</script>
+</body>
+</html>
