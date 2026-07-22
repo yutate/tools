@@ -706,6 +706,15 @@ const TOOLS = [
     aiRole:'Surface non-obvious connections between concepts; suggest relationship types and groupings.',
     upstream:['understanding'], downstream:['allocation'],
   },
+  {
+    id:'brief-council', name:'Brief Council',
+    layer:'strategy', status:'live',
+    url:'https://yutate.github.io/brief-council/',
+    purpose:'Diagnoses a raw, unstructured brief, generates three divergent strategic directions, runs a 5-persona AI council review, and compresses the result into a one-page Executive Brief.',
+    humanRole:'Answer the diagnostic questions, choose which strategic direction to pursue, and make the final call on what ships in the brief.',
+    aiRole:'Score brief readiness, surface missing information and risks, generate divergent strategic options, simulate expert critique, and compress the outcome into a structured brief.',
+    upstream:['understanding'], downstream:['allocation'],
+  },
 
   // ── Allocation ──
   {
@@ -834,7 +843,7 @@ const NODES = [
   {
     id:'strategy', type:'strategy', icon:'◈', label:'Strategy', status:'live',
     description:'Turns understanding into strategic options, scenarios, and trade-offs. Structures decisions for human judgment.',
-    relatedToolIds:['north-star-studio','ad-strategy-studio','think-drill','resonance-map','decision-lab'],
+    relatedToolIds:['north-star-studio','ad-strategy-studio','think-drill','resonance-map','decision-lab','brief-council'],
     signals:['Strategy generated','Scenario evaluated','Trade-off surfaced'],
     whyItMatters:'Strategy without systematic scenario evaluation relies on the loudest voice in the room — not the best reasoning.',
     whatItChanges:'Externalizes strategic logic so it can be examined, challenged, and improved — not just executed.',
